@@ -1,9 +1,5 @@
-fromPairs = require('ramda/src/fromPairs'); init = require('ramda/src/init'); isEmpty = require('ramda/src/isEmpty'); isNil = require('ramda/src/isNil'); last = require('ramda/src/last'); length = require('ramda/src/length'); map = require('ramda/src/map'); match = require('ramda/src/match'); path = require('ramda/src/path'); pickBy = require('ramda/src/pickBy'); replace = require('ramda/src/replace'); split = require('ramda/src/split'); test = require('ramda/src/test'); type = require('ramda/src/type'); #auto_require: srcramda
+import fromPairs from "ramda/es/fromPairs"; import init from "ramda/es/init"; import isEmpty from "ramda/es/isEmpty"; import isNil from "ramda/es/isNil"; import last from "ramda/es/last"; import length from "ramda/es/length"; import map from "ramda/es/map"; import path from "ramda/es/path"; import pickBy from "ramda/es/pickBy"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import type from "ramda/es/type"; #auto_require: esramda
 import {$, isNotNil, toStr} from "ramda-extras" #auto_require: esramda-extras
-[] = [] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (...args) -> console.log ...args
-_ = (...xs) -> xs
 
 import React from 'react'
 

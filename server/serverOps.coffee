@@ -1,8 +1,5 @@
-{has, match, values} = R = require 'ramda' #auto_require: ramda
-{change, mapO, $} = RE = require 'ramda-extras' #auto_require: ramda-extras
-[] = [] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (...args) -> console.log ...args
+import has from "ramda/es/has"; import values from "ramda/es/values"; #auto_require: esramda
+import {change, mapO, $} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
 popsiql = require 'popsiql'

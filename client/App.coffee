@@ -1,8 +1,5 @@
-import gt from "ramda/es/gt"; import head from "ramda/es/head"; import keys from "ramda/es/keys"; import length from "ramda/es/length"; import match from "ramda/es/match"; import replace from "ramda/es/replace"; import test from "ramda/es/test"; import values from "ramda/es/values"; #auto_require: esramda
+import gt from "ramda/es/gt"; import head from "ramda/es/head"; import keys from "ramda/es/keys"; import length from "ramda/es/length"; import replace from "ramda/es/replace"; import test from "ramda/es/test"; import values from "ramda/es/values"; #auto_require: esramda
 import {$} from "ramda-extras" #auto_require: esramda-extras
-[] = [] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (...args) -> console.log ...args
 _ = (...xs) -> xs
 
 import popsiql from "popsiql"

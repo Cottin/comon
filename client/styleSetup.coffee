@@ -1,8 +1,5 @@
-contains = require('ramda/src/contains'); has = require('ramda/src/has'); isNil = require('ramda/src/isNil'); join = require('ramda/src/join'); map = require('ramda/src/map'); match = require('ramda/src/match'); min = require('ramda/src/min'); none = require('ramda/src/none'); props = require('ramda/src/props'); reject = require('ramda/src/reject'); remove = require('ramda/src/remove'); reverse = require('ramda/src/reverse'); split = require('ramda/src/split'); splitEvery = require('ramda/src/splitEvery'); test = require('ramda/src/test'); type = require('ramda/src/type'); #auto_require: srcramda
+import has from "ramda/es/has"; import isNil from "ramda/es/isNil"; import join from "ramda/es/join"; import map from "ramda/es/map"; import min from "ramda/es/min"; import none from "ramda/es/none"; import props from "ramda/es/props"; import reject from "ramda/es/reject"; import remove from "ramda/es/remove"; import reverse from "ramda/es/reverse"; import split from "ramda/es/split"; import splitEvery from "ramda/es/splitEvery"; import test from "ramda/es/test"; import type from "ramda/es/type"; #auto_require: esramda
 import {change, $, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
-[] = [] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (...args) -> console.log ...args
 
 import React from 'react'
 import {RendererProvider} from 'react-fela'

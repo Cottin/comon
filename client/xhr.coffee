@@ -1,8 +1,5 @@
-import match from "ramda/es/match"; import none from "ramda/es/none"; import path from "ramda/es/path"; import test from "ramda/es/test"; #auto_require: esramda
+import none from "ramda/es/none"; import path from "ramda/es/path"; import test from "ramda/es/test"; #auto_require: esramda
 import {} from "ramda-extras" #auto_require: esramda-extras
-[] = [] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (...args) -> console.log ...args
 _ = (...xs) -> xs
 
 import * as utils from './clientUtils'

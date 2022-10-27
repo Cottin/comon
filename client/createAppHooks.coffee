@@ -1,8 +1,5 @@
-import always from "ramda/es/always"; import clone from "ramda/es/clone"; import init from "ramda/es/init"; import match from "ramda/es/match"; import merge from "ramda/es/merge"; import omit from "ramda/es/omit"; import type from "ramda/es/type"; #auto_require: esramda
+import always from "ramda/es/always"; import clone from "ramda/es/clone"; import init from "ramda/es/init"; import omit from "ramda/es/omit"; import type from "ramda/es/type"; #auto_require: esramda
 import {isNilOrEmpty, PromiseProps, sf0} from "ramda-extras" #auto_require: esramda-extras
-[ːABORT, ːextend] = ['ABORT', 'extend'] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (args...) -> console.log args...
 _ = (...xs) -> xs
 
 import React from 'react'
@@ -160,7 +157,7 @@ export default createHooks = ({run, sub, runSub, updateCache}) ->
 			cs {wait: true, error: undefined, result: undefined}
 			try
 				result = await Promise.resolve serverCall args...
-				if result == ːABORT
+				if result == 'ABORT'
 					cs {wait: false}
 					return result
 				if options.isPopsiql then updateCache result.normDelta

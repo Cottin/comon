@@ -1,11 +1,9 @@
-clone = require('ramda/src/clone'); curry = require('ramda/src/curry'); isNil = require('ramda/src/isNil'); length = require('ramda/src/length'); map = require('ramda/src/map'); match = require('ramda/src/match'); replace = require('ramda/src/replace'); split = require('ramda/src/split'); test = require('ramda/src/test'); toLower = require('ramda/src/toLower'); type = require('ramda/src/type'); #auto_require: srcramda
+import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import type from "ramda/es/type"; #auto_require: esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
+_ = (...xs) -> xs
+
 import clm from "country-locale-map"
 import exchangeRates from './exchangeRates'
-[] = [] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (...args) -> console.log ...args
-_ = (...xs) -> xs
 
 
 require 'dayjs/locale/en-gb'

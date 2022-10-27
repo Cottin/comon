@@ -1,9 +1,5 @@
-import equals from "ramda/es/equals"; import isNil from "ramda/es/isNil"; import match from "ramda/es/match"; import merge from "ramda/es/merge"; #auto_require: esramda
+import equals from "ramda/es/equals"; import isNil from "ramda/es/isNil"; #auto_require: esramda
 import {change} from "ramda-extras" #auto_require: esramda-extras
-[ːPENDING] = ['PENDING'] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (args...) -> console.log args...
-_ = (...xs) -> xs
 
 
 
@@ -44,7 +40,7 @@ export default class Cache
 	runSub: (query) ->
 		runRes = @run query
 		if runRes?.then
-			initialRes = ːPENDING
+			initialRes = 'PENDING'
 			Promise.resolve(runRes).then (res) ->
 				initialRes = res
 		else
@@ -54,7 +50,7 @@ export default class Cache
 		subscribe = (query2, cb) =>
 			sub = {id: @subId++, query: query2, cb}
 			@subs[sub.id] = sub
-			if initialRes == ːPENDING && equals query, query2
+			if initialRes == 'PENDING' && equals query, query2
 				sub.pending = true
 				runRes.then (res) =>
 					sub.pending = false

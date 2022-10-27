@@ -1,8 +1,6 @@
-import contains from "ramda/es/contains"; import find from "ramda/es/find"; import findIndex from "ramda/es/findIndex"; import isEmpty from "ramda/es/isEmpty"; import isNil from "ramda/es/isNil"; import last from "ramda/es/last"; import match from "ramda/es/match"; import sort from "ramda/es/sort"; import type from "ramda/es/type"; import update from "ramda/es/update"; import where from "ramda/es/where"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
+import find from "ramda/es/find"; import findIndex from "ramda/es/findIndex"; import isEmpty from "ramda/es/isEmpty"; import isNil from "ramda/es/isNil"; import last from "ramda/es/last"; import move from "ramda/es/move"; import sort from "ramda/es/sort"; import type from "ramda/es/type"; import update from "ramda/es/update"; import where from "ramda/es/where"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
 import {change, mapO, $} from "ramda-extras" #auto_require: esramda-extras
-[ːsort〳1, ːup, ːdown, ːABORT, ːid] = ['sort〳1', 'up', 'down', 'ABORT', 'id'] #auto_sugar
-qq = (f) -> console.log match(/return (.*);/, f.toString())[1], f()
-qqq = (...args) -> console.log ...args
+[ːup, ːsort〳1, ːdown, ːABORT, ːid] = ['up', 'sort〳1', 'down', 'ABORT', 'id'] #auto_sugar
 _ = (...xs) -> xs
 
 # import xhr from '../lib/xhr'
