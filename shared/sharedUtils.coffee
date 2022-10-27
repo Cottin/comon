@@ -1,4 +1,4 @@
-curry = require('ramda/src/curry'); isNil = require('ramda/src/isNil'); length = require('ramda/src/length'); map = require('ramda/src/map'); match = require('ramda/src/match'); replace = require('ramda/src/replace'); split = require('ramda/src/split'); test = require('ramda/src/test'); toLower = require('ramda/src/toLower'); type = require('ramda/src/type'); #auto_require: srcramda
+clone = require('ramda/src/clone'); curry = require('ramda/src/curry'); isNil = require('ramda/src/isNil'); length = require('ramda/src/length'); map = require('ramda/src/map'); match = require('ramda/src/match'); replace = require('ramda/src/replace'); split = require('ramda/src/split'); test = require('ramda/src/test'); toLower = require('ramda/src/toLower'); type = require('ramda/src/type'); #auto_require: srcramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 import clm from "country-locale-map"
 import exchangeRates from './exchangeRates'
@@ -15,6 +15,8 @@ quarterOfYear = require 'dayjs/plugin/quarterOfYear'
 dayjs.extend quarterOfYear
 weekOfYear = require 'dayjs/plugin/weekOfYear'
 dayjs.extend weekOfYear
+# weekday = require 'dayjs/plugin/weekday'
+# dayjs.extend weekday
 customParseFormat = require 'dayjs/plugin/customParseFormat'
 dayjs.extend customParseFormat
 
@@ -58,6 +60,7 @@ export df =
 	yyyymmdd: (date) -> dayjs(date).format 'YYYY-MM-DD'
 	now: () -> dayjs().format 'YYYY-MM-DD'
 	isWeekend: (date) -> dayjs(date).day() == 0 || dayjs(date).day() == 6
+	daysInMonth: (date) -> dayjs(date).daysInMonth()
 
 	# Tid mostly handles dates and we save quite a bit of complexity by defaulting to not care about time
 	add: curry (num, unit, date) -> dayjs(date).add(num, unit).format(_YYYYMMDD)
@@ -150,3 +153,22 @@ export fromHHMMorDec = (s) ->
 		return parseInt(h) + parseFloat(mm) / 60
 	else if test(/,/, s) then return _nullIfNaN parseFloat replace ',', '.', s
 	else return _nullIfNaN parseFloat s
+
+# Returns a new array where element on idx1 is swaped with element on idx2.
+# Note: the elements in the new array are not clones so if you mutate one it will mutate in the original
+# array too (the object pointed to by the original array and new array are the same).
+export swap = curry (idx1, idx2, xs) ->
+	# arr = []
+	# for x in xs then arr.push x
+	arr = clone xs
+	temp = arr[idx1]
+	arr[idx1] = arr[idx2]
+	arr[idx2] = temp
+	return arr
+
+export trycatch = (promise) ->
+	try
+		res = await promise
+		return res
+	catch err
+		return undefined

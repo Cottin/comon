@@ -72,6 +72,14 @@ export keyCodes =
 	TAB: 9
 	SPACE: 32
 
+# Calculates the mouse offset from target element (or any element you supply).
+# Helper since this is quite a common task.
+export getMouseOffset = (e, element = null) ->
+	rect = (element || e.target).getBoundingClientRect()
+	offsetTop = e.clientY - rect.top
+	offsetLeft = e.clientX - rect.left
+	return [offsetTop, offsetLeft]
+
 # https://www.w3schools.com/js/js_cookies.asp
 export getCookie = (cname) ->
 	name = cname + '='

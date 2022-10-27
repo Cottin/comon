@@ -1,4 +1,4 @@
-import both from "ramda/es/both"; import empty from "ramda/es/empty"; import head from "ramda/es/head"; import isNil from "ramda/es/isNil"; import keys from "ramda/es/keys"; import length from "ramda/es/length"; import omit from "ramda/es/omit"; import type from "ramda/es/type"; import values from "ramda/es/values"; #auto_require: esramda
+import both from "ramda/es/both"; import empty from "ramda/es/empty"; import head from "ramda/es/head"; import isNil from "ramda/es/isNil"; import keys from "ramda/es/keys"; import length from "ramda/es/length"; import omit from "ramda/es/omit"; import type from "ramda/es/type"; #auto_require: esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 
 import popsiql from 'popsiql'
@@ -94,6 +94,7 @@ export default createPDB = (config) ->
 # extractFromArgs {entity: 'Customer', values: {name: 'Google Inc'}} # explicit
 # extractFromArgs {Customer: {name: 'Google Inc'}} # implicit
 extractFromArgs = (args, idRequired = false) ->
+	console.log 'args', args
 	if args.entity
 		if idRequired
 			if isNil args.id then throw Error 'id is required'
@@ -102,12 +103,12 @@ extractFromArgs = (args, idRequired = false) ->
 
 	entity = $ args, keys, head
 	if !entity then throw new Error 'args in pdb needs to be exactly 1'
-	values = $ args[entity], omit ['id']
+	vals = $ args[entity], omit ['id']
 
 	if idRequired
 		if isNil args[entity].id then throw new Error 'id is required'
-		return {entity, values, id: args[entity].id}
-	else return {entity, values}
+		return {entity, values: vals, id: args[entity].id}
+	else return {entity, values: vals}
 
 
 # Entity specific string shortener

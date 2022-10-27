@@ -60,14 +60,10 @@ export default styleSetup = ({families, bg, styleMaps, colors, staticBefore = ''
 		text-decoration: none;
 	}
 
-	input {
-		background: none;
-		border: none;
-	}
-
 	textarea,
 	input.text,
 	input[type="text"],
+	input[type="email"],
 	input[type="password"],
 	input[type="button"],
 	input[type="submit"] {
@@ -76,6 +72,20 @@ export default styleSetup = ({families, bg, styleMaps, colors, staticBefore = ''
 		-webkit-appearance: none;
 		/*border-radius: 0; This messes with br8_8_8_8, disabling for now*/
 		/* margin: 0; This messes up with m10 on inputs, disabling for now /* seems iOS (eg. iPhone 8) adds some margin */
+		/*background: none;*/
+		/*border: none;*/
+		font-family: #{families[0]};
+	}
+
+	button {
+		/* https://www.daretothink.co.uk/stop-ios-styling-your-input-fields-and-buttons/ */
+		/* https://stackoverflow.com/a/15440636/416797 */
+		-webkit-appearance: none;
+		/*border-radius: 0; This messes with br8_8_8_8, disabling for now*/
+		/* margin: 0; This messes up with m10 on inputs, disabling for now /* seems iOS (eg. iPhone 8) adds some margin */
+		/*background: none;*/
+		/*border: none;*/
+		font-family: #{families[0]};
 	}
 
 	/* The above reset has too high specificity with [type="text, password..."] so that m10 or br8 is not applied.not

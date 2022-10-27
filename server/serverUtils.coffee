@@ -2,6 +2,7 @@ import empty from "ramda/es/empty"; import has from "ramda/es/has"; import isEmp
 import {} from "ramda-extras" #auto_require: esramda-extras
 
 export validateDelta = (delta) ->
+  console.log delta 
   if type(delta) != 'Object' then throw new Error "delta need to be object"
   if isEmpty delta then throw new Error "delta cannot be empty"
 

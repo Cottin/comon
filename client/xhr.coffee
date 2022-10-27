@@ -8,9 +8,10 @@ _ = (...xs) -> xs
 import * as utils from './clientUtils'
 import {parseError} from '../shared/errors'
 
-please = "Please check your connection and try again"
+please = "Couldn't reach server. Please check your connection and try again."
+please500 = "Something did not work... We're sorry, please contact support."
 
-export default xhr = (popsiqlUrl, restUrl) ->
+export default xhr = ({popsiqlUrl, restUrl, on401}) ->
 	popsiqlApi:
 		post: (remoteQuery) ->
 			token = undefined #utils.getCookie('CSRF-TOKEN')
@@ -22,8 +23,8 @@ export default xhr = (popsiqlUrl, restUrl) ->
 				body: JSON.stringify remoteQuery, (k, v) -> if v == undefined then null else v
 
 			if res.status == 401
-				if ! test /\/login|\/logout/, location.pathname
-					location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
+				if ! test /\/login|\/logout/, location.pathname then on401()
+					# location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
 			else if res.status >= 200 && res.status < 400
 				return res.json()
 			else if res.status == 444
@@ -47,8 +48,10 @@ export default xhr = (popsiqlUrl, restUrl) ->
 
 			if res.status == 401
 				if ! test /\/login|\/logout/, location.pathname
-					location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
+					on401()
 					return undefined
+					# location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
+					# return undefined
 			else if res.status >= 200 && res.status < 400
 				if responseType == 'blob'
 					# https://stackoverflow.com/a/9970672/416797
@@ -64,13 +67,13 @@ export default xhr = (popsiqlUrl, restUrl) ->
 					return undefined
 				else return res.json()
 			else if res.status == 444
-				text = await res.text()
-				throw new Error "Rest(444)!" + text
+				ourError = await res.json()
+				throw new Error ourError.message
 			else if res.status == 500
 				text = await res.text()
-				throw new Error "Rest(500)!" + text
+				throw new Error please500
 			else
-				throw new Error "XHR(Popsiql)!" + please
+				throw new Error please
 
 		get: (path, {responseType, fileName} = {}) ->
 			token = undefined #utils.getCookie('CSRF-TOKEN')
@@ -82,7 +85,8 @@ export default xhr = (popsiqlUrl, restUrl) ->
 
 			if res.status == 401
 				if ! test /\/login|\/logout/, location.pathname
-					location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
+					on401()
+					# location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
 					return undefined
 			else if res.status >= 200 && res.status < 400
 				if responseType == 'blob'

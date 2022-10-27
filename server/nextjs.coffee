@@ -58,7 +58,7 @@ handleError = (res, err) ->
 					err instanceof PermissionError ||
 					err instanceof DBError
 		res.ctx.log.error err
-		res.status(401).json(stringifyError(err))
+		res.status(444).json(stringifyError(err))
 	else
 		res.ctx.log.error err
 		throw err # throw any other kind so that nextjs error view in the browser works as expected

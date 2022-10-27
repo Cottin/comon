@@ -6,6 +6,14 @@ export class ValidationError extends Error
 		@name = 'ValidationError'
 		# eg. {email: true, password: true} for individual error messages and removal of them separatly.
 		if meta then @meta = meta
+
+# # Something in user input is not valid
+# export class ValidationError2 extends Error
+# 	constructor: (message, error, ...args) ->
+# 		super(message, error, ...args)
+# 		@name = 'ValidationError2'
+# 		# eg. {email: true, password: true} for individual error messages and removal of them separatly.
+# 		if error then @error = error
 		
 # Something is faulty with input data or stored data or similar but this is different from
 # a ValidationError in that it shouldn't occur with correct application usage. Ie. if this is seen
