@@ -21,10 +21,26 @@ export default createPDB = (config) ->
 	validateId = config.validateId || defaultValidateId
 
 	if isNilOrEmpty config.model then throw new Error 'model missing'
-	psql = popsiql.sql config.model
 
+	pop = popsiql config.model
 
 	readF = (ctx, query, runF, both = false, unsafe = false) ->
+		# return new Promise (resolve) -> setTimeout (() -> resolve(123456)), 100
+		log ctx, popsiql.utils.queryToString query
+
+		runner = (sql, params) ->
+			return db.run ctx, sql, params
+
+		if both
+			[res, normRes] = await pop.sql.options({result: 'both', runner}) query
+			log ctx, toShortString res
+			return [res, normRes]
+		else
+			res = await pop.sql.options({runner}) query
+			log ctx, toShortString res
+			return res
+
+	readFOld = (ctx, query, runF, both = false, unsafe = false) ->
 		execSql = (fatQuery) ->
 			safeGuardStr = if !unsafe then safeGuard ctx, fatQuery.entity, true
 			[sql, params] = psql.read fatQuery, safeGuardStr
@@ -41,7 +57,8 @@ export default createPDB = (config) ->
 	read.normalized = (ctx, query) ->
 		console.log 'normalized', query
 		readF ctx, query, db.run, true
-	read.unsafe = (ctx, query) -> readF ctx, query, db.run, false, true
+	read.unsafe = (ctx, query) ->
+		readF ctx, query, db.run, false, true
 
 	# readTransF = (ctx, query, runF, )
 
@@ -87,7 +104,7 @@ export default createPDB = (config) ->
 
 		return {begin, commit, rollback, release, run, read, insert: insert_, update: update_, remove: remove_}
 
-	return {read, transaction, psql}
+	return {read, transaction, psql: pop.sql}
 
 
 # Extracts entity and values to support both explicit and implicit usage
@@ -122,4 +139,4 @@ toShortString = (x) ->
 	else if 'Object' == type x
 		return "{ id: #{x.id}, ... }"
 	else
-		return res
+		return x

@@ -1,4 +1,4 @@
-import has from "ramda/es/has"; import isNil from "ramda/es/isNil"; import join from "ramda/es/join"; import map from "ramda/es/map"; import min from "ramda/es/min"; import none from "ramda/es/none"; import props from "ramda/es/props"; import reject from "ramda/es/reject"; import remove from "ramda/es/remove"; import reverse from "ramda/es/reverse"; import split from "ramda/es/split"; import splitEvery from "ramda/es/splitEvery"; import test from "ramda/es/test"; import type from "ramda/es/type"; #auto_require: esramda
+import has from "ramda/es/has"; import includes from "ramda/es/includes"; import isNil from "ramda/es/isNil"; import join from "ramda/es/join"; import map from "ramda/es/map"; import min from "ramda/es/min"; import none from "ramda/es/none"; import reject from "ramda/es/reject"; import remove from "ramda/es/remove"; import reverse from "ramda/es/reverse"; import split from "ramda/es/split"; import splitEvery from "ramda/es/splitEvery"; import test from "ramda/es/test"; import type from "ramda/es/type"; #auto_require: esramda
 import {change, $, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 
 import React from 'react'
@@ -139,7 +139,7 @@ export default styleSetup = ({families, bg, styleMaps, colors, staticBefore = ''
 		compName = null
 		if 'Object' == type(a0) && ! has '$$typeof', a0
 			comp = 'div'
-			props = a0
+			Props = a0
 			children = Array.prototype.splice.call(arguments, 1)
 		else
 			comp = a0 # either a string or a component, eg. 'span' or Icon
@@ -147,16 +147,16 @@ export default styleSetup = ({families, bg, styleMaps, colors, staticBefore = ''
 			# if type(comp) != 'String' && !test(/Svg/, comp.name) && comp.name != '' then isComp = true
 			if type(comp) != 'String' && !test(/Svg/, comp.name) then isComp = true
 			if comp.$$noComp then isComp = false
-			props = arguments[1]
+			Props = arguments[1]
 			children = Array.prototype.splice.call(arguments, 2)
 
 		if isComp
-			props_ = $ props, change {s: (s) -> "#{s||''},#{a0.name},"}
+			props_ = $ Props, change {s: (s) -> "#{s||''},#{a0.name},"}
 		else
 			extras = {}
-			s = props.s
-			if props.s && contains ',', props.s
-				sNamePairs = $ props.s, split(','), splitEvery(2)
+			s = Props.s
+			if Props.s && includes ',', Props.s
+				sNamePairs = $ Props.s, split(','), splitEvery(2)
 				sLiteral = $ sNamePairs, map(([s, name]) -> "#{s}, #{name}"), join(' > ')
 				totalName = $ sNamePairs, map(([s, name]) -> name), reject(isNil), join('>')
 				s = $ sNamePairs, map(([s, name]) -> s), reject(isNilOrEmpty), reverse, join(' ')
@@ -166,7 +166,7 @@ export default styleSetup = ({families, bg, styleMaps, colors, staticBefore = ''
 			felaStyle = parseShortstyle s
 			felaClassName = felaRenderer.renderRule (-> felaStyle), {}
 
-			props_ = $ props, change {
+			props_ = $ Props, change {
 				className: (c) -> $ [c, felaClassName], reject(isNilOrEmpty), join(' '), (x) -> x || undefined
 				...extras
 			}

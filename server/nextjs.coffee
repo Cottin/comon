@@ -117,6 +117,7 @@ export createEndpoint = (config, model) ->
 			res.ctx.transaction = (f) -> transaction pdb, baseCtx, f
 			res.ctx.read = (query) -> read pdb, baseCtx, query
 			res.ctx.read.unsafe = (query) -> read pdb, baseCtx, query, true
+			# res.ctx.read.unsafe = (query) -> new Promise (resolve) -> setTimeout (() -> resolve(123)), 100
 			res.ctx.read.normalized = (query) ->
 				console.log 'read.normalized '
 				read pdb, baseCtx, query, false, true
