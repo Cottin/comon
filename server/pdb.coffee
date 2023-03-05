@@ -1,131 +1,98 @@
-import both from "ramda/es/both"; import empty from "ramda/es/empty"; import head from "ramda/es/head"; import isNil from "ramda/es/isNil"; import keys from "ramda/es/keys"; import length from "ramda/es/length"; import omit from "ramda/es/omit"; import type from "ramda/es/type"; #auto_require: esramda
-import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
+import both from "ramda/es/both"; import curry from "ramda/es/curry"; import empty from "ramda/es/empty"; import length from "ramda/es/length"; import type from "ramda/es/type"; #auto_require: esramda
+import {isNilOrEmpty, sf2} from "ramda-extras" #auto_require: esramda-extras
 
-import popsiql from 'popsiql'
+import {popsiql, popSql} from 'popsiql'
 
 
-# Gives you an api to run popsiql queries against the supplied db object.
+
+
+# Gives you an api to run popsiql queries against the supplied db object and lets you supply a ctx object
 # eg. pdb = createPDB ...
-#			pdb.read Customer: _ {status: 'demo'}
+#			pdb.read customer: _ {status: {eq: 'demo'}}
 #
-# Note: Lets you supply a ctx object if you need a more stateful execution
+# Note: This is pure glue code
 ##############################################################################################################
 
 export default createPDB = (config) ->
 	db = config.db
 	if !db then throw new Error 'db missing'
-
-	log = config.log || (ctx, args...) -> console.log args...
-	safeGuard = config.safeGuard || (ctx, entity, asString) -> if asString then '' else {}
-	defaultValidateId = (ctx) -> if THIS_IS_WRONG_isNil(id) || isNaN(id) then throw new FaultError "invalid entity id: #{id}"
-	validateId = config.validateId || defaultValidateId
-
 	if isNilOrEmpty config.model then throw new Error 'model missing'
 
-	pop = popsiql config.model
+	parse = popsiql config.model
+	psql = popSql parse
 
-	readF = (ctx, query, runF, both = false, unsafe = false) ->
-		# return new Promise (resolve) -> setTimeout (() -> resolve(123456)), 100
-		log ctx, popsiql.utils.queryToString query
 
-		runner = (sql, params) ->
-			return db.run ctx, sql, params
+	defaultRunner = curry (ctx, sql, params) -> db.run ctx, sql, params
+
+	readF = (ctx, query, runner, both = false, unsafe = false) ->
+		ctx.log popsiql.utils.queryToString query
+
+		safeGuard = if !unsafe then config.safeGuards.read ctx
 
 		if both
-			[res, normRes] = await pop.sql.options({result: 'both', runner}) query
-			log ctx, toShortString res
+			[res, normRes] = await psql query, {result: 'both', runner, safeGuard}
+			ctx.log toShortString res
 			return [res, normRes]
 		else
-			res = await pop.sql.options({runner}) query
-			log ctx, toShortString res
+			res = await psql query, {runner, safeGuard}
+			ctx.log toShortString res
 			return res
 
-	readFOld = (ctx, query, runF, both = false, unsafe = false) ->
-		execSql = (fatQuery) ->
-			safeGuardStr = if !unsafe then safeGuard ctx, fatQuery.entity, true
-			[sql, params] = psql.read fatQuery, safeGuardStr
-			readRes = await runF ctx, sql, params
-			log ctx, toShortString readRes
-			return readRes
+	writeF  = (ctx, delta, runner, unsafe = false) ->
+		ctx.log sf2 delta
 
-		log ctx, popsiql.utils.queryToString query
+		safeGuard = if !unsafe then config.safeGuards.write ctx
 
-		[result, normalized] = await popsiql.query.runQuery config.model, execSql, query
-		return if both then [result, normalized] else result
+		res = await psql.write delta, {runner, safeGuard}
+		return {}
 
-	read = (ctx, query) -> readF ctx, query, db.run, false
-	read.normalized = (ctx, query) ->
-		console.log 'normalized', query
-		readF ctx, query, db.run, true
-	read.unsafe = (ctx, query) ->
-		readF ctx, query, db.run, false, true
 
-	# readTransF = (ctx, query, runF, )
-
-	# eg. safeGuard = {cid: 123}
-	transaction = (ctx) ->
+	getTransaction = (ctx) ->
 		trans = await db.transaction ctx
 
 		{begin, commit, rollback, release, run} = trans
 
-		runTr = (__ctx, sql, params) -> run sql, params
+		runner = (sql, params) -> run sql, params
 
-		read = (query, safeGuard) -> readF ctx, query, runTr, false
-		read.normalized = (query, safeGuard) -> readF ctx, query, runTr, true
-		read.unsafe = (query) -> readF ctx, query, runTr, false, true
+		read = (query) -> readF ctx, query, runner, false, false
+		read.normalized = (query) -> readF ctx, query, runner, true, false
+		read.unsafe = (query) -> readF ctx, query, runner, false, true
 
-		insertF = (args, unsafe = false) ->
-			{entity, values: vals} = extractFromArgs args
-			safeGuardObj = safeGuard ctx, entity, false
-			valuesData = if unsafe then vals else {...vals, ...safeGuardObj}
-			newId = await run.insert.apply null, psql.insert {entity, values: valuesData}
-			return newId
+		write = (delta) -> writeF ctx, delta, runner, false
+		write.unsafe = (delta) -> writeF ctx, delta, runner, true
 
-		insert_ = (args) -> insertF args, false
-		insert_.unsafe = (args) -> insertF args, true
+		return {begin, commit, rollback, release, run, read, write}
 
-		updateF = (args, unsafe = false) ->
-			{entity, id, values: vals} = extractFromArgs args, true
-			validateId id
-			valuesData = if unsafe then vals else {...vals, ...safeGuard}
-			return await run.update.apply null, psql.update {entity, id, values: valuesData}
+	makeTransaction = (ctx) -> (fn) ->
+		tr = await getTransaction ctx
+		try
+			await tr.begin()
+			result = await fn {read: tr.read, write: tr.write}
+			await tr.commit()
+			return result
+		catch err
+			await tr.rollback()
+			throw err
+		finally
+			tr.release()
 
-		update_ = (args) -> updateF args, false
-		update_.unsafe = (args) -> updateF args, true
+	# Given a ctx returns a ctx dependent api to interact with pdb
+	makeApi = (ctx) ->
+		read = (query) -> readF ctx, query, defaultRunner(ctx), false, false
+		read.normalized = (query) -> readF ctx, query, defaultRunner(ctx), true, false
+		read.unsafe = (query) -> readF ctx, query, defaultRunner(ctx), false, true
 
-		removeF = (args, unsafe = false) ->
-			{entity, id, values: vals} = extractFromArgs args, true
-			validateId id
-			valuesData = if unsafe then vals else {...vals, ...safeGuard}
-			return await run.delete.apply null, psql.delete {entity, id, values: valuesData}
+		write = (delta) -> writeF ctx, delta, defaultRunner(ctx), false
+		write.unsafe = (delta) -> writeF ctx, delta, defaultRunner(ctx), true
 
-		remove_ = (args) -> removeF args, false
-		remove_.unsafe = (args) -> removeF args, true
+		transaction = makeTransaction ctx
 
-		return {begin, commit, rollback, release, run, read, insert: insert_, update: update_, remove: remove_}
+		return {read, write, transaction}
 
-	return {read, transaction, psql: pop.sql}
+	# Read function to use before makeApi has been called
+	readCtxUnsafe = (ctx, query) -> readF ctx, query, defaultRunner(ctx), false, true
 
-
-# Extracts entity and values to support both explicit and implicit usage
-# extractFromArgs {entity: 'Customer', values: {name: 'Google Inc'}} # explicit
-# extractFromArgs {Customer: {name: 'Google Inc'}} # implicit
-extractFromArgs = (args, idRequired = false) ->
-	console.log 'args', args
-	if args.entity
-		if idRequired
-			if isNil args.id then throw Error 'id is required'
-			return {entity: args.entity, values: args.values, id: args.id}
-		return {entity: args.entity, values: args.values}
-
-	entity = $ args, keys, head
-	if !entity then throw new Error 'args in pdb needs to be exactly 1'
-	vals = $ args[entity], omit ['id']
-
-	if idRequired
-		if isNil args[entity].id then throw new Error 'id is required'
-		return {entity, values: vals, id: args[entity].id}
-	else return {entity, values: vals}
+	return {makeApi, readCtxUnsafe}
 
 
 # Entity specific string shortener

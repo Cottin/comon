@@ -24,9 +24,11 @@
   "dependencies": {
     "@babel/runtime": "^7.15.3",
     "country-locale-map": "^1.8.0",
+    "date-fns": "^2.29.3",
     "dayjs": "^1.10.6",
     "fela": "^11.6.1",
     "fela-preset-web": "^11.6.1",
+    "lexorank": "^1.0.5",
     "nanoid": "^4.0.0",
     "pg": "^8.7.3",
     "pg-native": "^3.0.0",
@@ -53,6 +55,7 @@
   "jest": {
     "setupFilesAfterEnv": [
       "./setupTests.js"
-    ]
+    ],
+    "verbose": true
   }
 }

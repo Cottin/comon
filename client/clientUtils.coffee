@@ -1,5 +1,5 @@
-import fromPairs from "ramda/es/fromPairs"; import init from "ramda/es/init"; import isEmpty from "ramda/es/isEmpty"; import isNil from "ramda/es/isNil"; import last from "ramda/es/last"; import length from "ramda/es/length"; import map from "ramda/es/map"; import path from "ramda/es/path"; import pickBy from "ramda/es/pickBy"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import type from "ramda/es/type"; #auto_require: esramda
-import {$, isNotNil, toStr} from "ramda-extras" #auto_require: esramda-extras
+import _fromPairs from "ramda/es/fromPairs"; import _init from "ramda/es/init"; import _isEmpty from "ramda/es/isEmpty"; import _isNil from "ramda/es/isNil"; import _join from "ramda/es/join"; import _last from "ramda/es/last"; import _length from "ramda/es/length"; import _map from "ramda/es/map"; import _path from "ramda/es/path"; import _pickBy from "ramda/es/pickBy"; import _reject from "ramda/es/reject"; import _replace from "ramda/es/replace"; import _split from "ramda/es/split"; import _test from "ramda/es/test"; import _toPairs from "ramda/es/toPairs"; import _type from "ramda/es/type"; #auto_require: _esramda
+import {change, $, isNotNil} from "ramda-extras" #auto_require: esramda-extras
 
 import React from 'react'
 
@@ -11,30 +11,30 @@ import React from 'react'
 export capitalize = (s) -> s.charAt(0).toUpperCase() + s.slice(1)
 
 export equalsAt = (pathStr, o1, o2) ->
-	spaths = split ',', pathStr
+	spaths = _split ',', pathStr
 	for spath in spaths
-		p = split '.', spath
-		if last(p) == '*'
-			p_ = init p
-			o1p = path p_, o1
-			o2p = path p_, o2
+		p = _split '.', spath
+		if _last(p) == '*'
+			p_ = _init p
+			o1p = _path p_, o1
+			o2p = _path p_, o2
 			console.log o1p, o2p
 			for k,v of o1p
 				if o2p[k] != v then return false
 		else
-			if path(p, o1) != path(p, o2) then return false
+			if _path(p, o1) != _path(p, o2) then return false
 
 	return true
 
-export emptyIfNil = (x) -> if isNil x then '' else x
+export emptyIfNil = (x) -> if _isNil x then '' else x
 
 export cutTextAt = (n, s) ->
-	if isNil s then ''
-	else if length(s) > n then s.substr(0, n) + '...'
+	if _isNil s then ''
+	else if _length(s) > n then s.substr(0, n) + '...'
 	else return s
 
 export toHMM = (n) ->
-	if isNil n then return null
+	if _isNil n then return null
 	h = toH n
 	mm = toMM n
 	return "#{h}:#{mm}"
@@ -47,12 +47,12 @@ export toMM = (n) ->
 	if m < 10 then '0' + m else m
 
 export onlyInteger = (n) -> Math.trunc n
-export onlyDecimal = (n) -> $ n.toFixed(2), toStr, replace(/.*\./, '.')
+export onlyDecimal = (n) -> $ n.toFixed(2), toStr, _replace(/.*\./, '.')
 
 export flattenEntity = (o) ->
 	res = {}
 	for k, v of o
-		switch type v
+		switch _type v
 			when 'Null', 'String', 'Number', 'Boolean' then res[k] = v
 			when 'Object' then res["#{k}Id"] = v.id
 			else throw new Error 'NYI'
@@ -95,7 +95,7 @@ export isTouch = () -> window.matchMedia("(pointer: coarse)").matches
 
 # Adapted from https://stackoverflow.com/a/7557433/416797
 export elementViewportOffset = (el) ->
-	if isNil el then return {top: 0, right: 0, bottom: 0, left: 0}
+	if _isNil el then return {top: 0, right: 0, bottom: 0, left: 0}
 	rect = el.getBoundingClientRect()
 
 	return 
@@ -107,22 +107,54 @@ export elementViewportOffset = (el) ->
 
 # Optimistically parses to Number or Boolean if needed
 autoParse = (val) ->
-	if !isNaN(val) then Number(val)
-	else if val == 'true' then true
+	# if !isNaN(val) then Number(val) # disabling temporarily since mixing '102', and 'asldkjaslkd' ids in time and I'm tired
+	if val == 'true' then true
 	else if val == 'false' then false
-	else if test /^\[.*\]$/, val # arrays eg. "[1, 2]" --> [1, 2]
+	else if _test(/^\[.*\]$/, val) # arrays eg. "[1, 2]" --> [1, 2]
 		if val == '[]' then []
-		else $ val[1...val.length-1], split(','), map autoParse
+		else $ val[1...val.length-1], _split(','), _map autoParse
 	else val
+
+kvToQuery = ([k, v]) ->
+	if _type(v) == 'Array'
+		if _isEmpty v then ""
+		else "#{k}=[#{$ v, _join(',')}]"
+	else "#{k}=#{v}"
+
 
 # Parses url string to object
 # eg. '/p/q/r?a=1&b=2' -> {path0: 'p', path1: 'q', path2: 'r', a: 1, b: 2}
 export fromUrl = (url) ->
-	[pathStr, queryStr] = $ url, replace(/^\//, ''), split '?'
-	[path0, path1, path2, path3, path4] = if isEmpty pathStr then [] else split '/', pathStr
-	qs = $ queryStr || '', split('&'), map(split('=')), fromPairs
+	[pathStr, queryStr] = $ url, _replace(/^\//, ''), _split '?'
+	[path0, path1, path2, path3, path4] = if _isEmpty pathStr then [] else _split '/', pathStr
+	qs = $ queryStr || '', _split('&'), _map(_split('=')), _fromPairs
 
-	return $ {path0, path1, path2, path3, path4, ...qs}, pickBy(isNotNil), map(autoParse)
+	return $ {path0, path1, path2, path3, path4, ...qs}, _pickBy(isNotNil), _map(autoParse)
+
+# Stringifies a query object to a url string
+# eg. {path0: 'p', path1: 'q', path2: 'r', a: 1, b: 2}' -> /p/q/r?a=1&b=2'
+export toUrl = (query) ->
+	{path0, path1, path2, path3, path4, ...rest} = query
+	paths = $ [path0, path1, path2, path3, path4], _reject(_isNil), _join '/'
+	queryStr = if _isEmpty rest then '' else "?" + $ rest, _toPairs, _map(kvToQuery), _join '&'
+	return "#{if paths == '' then '' else '/' + paths}#{queryStr}"
+
+# Convenience function to interact with next.js router in "our" way. Use with either router or Router
+export navigate = (routerOrRouter, spec, options = {scroll: false, shallow: true}) ->
+	asPath = routerOrRouter.asPath || routerOrRouter.router?.state?.asPath
+	urlQuery = fromUrl asPath
+	newUrl = toUrl change spec, urlQuery
+	routerOrRouter.push newUrl, null, options
+
+export prepareNavigate = (routerOrRouter, spec, options = {scroll: false, shallow: true}) ->
+	asPath = routerOrRouter.asPath || routerOrRouter.router?.state?.asPath
+	# console.log 'asPath', asPath
+	urlQuery = fromUrl asPath
+	# console.log 'urlQuery', urlQuery
+	newUrl = toUrl change spec, urlQuery
+	# console.log 'newUrlObj', 	change spec, urlQuery
+	# console.log 'newUrl', newUrl
+	return newUrl
 
 
 ########## SPECIALS ##########################################################################################

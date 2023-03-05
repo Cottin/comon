@@ -24,7 +24,6 @@ export default class IdCache
 	# Note: can be expensive if delta is big map and state is big map, concider change {entity: always({..})}
 	change: (_delta) =>
 		delta = clone _delta
-		console.log 'Cache change', delta
 
 		# Handle id-changes
 		# eg. {Project: {-1: {id: 11, name: 'Office rebrand'}}}

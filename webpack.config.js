@@ -28,12 +28,13 @@ const config = {
 				include: [
 					path.resolve(__dirname),
 					path.resolve(__dirname, '../ramda-extras'),
+					path.resolve(__dirname, '../popsiq'),
 				],
 				exclude: /node_modules|packages/,
 				test: /\.coffee$/,
 				use: [
 					{loader: 'coffee-loader'},
-					{loader: path.resolve(__dirname, '../hack/keywordCoffeeLoader.js')},
+					{loader: path.resolve(__dirname, '../hack/loaders/keywordCoffeeLoader.js')},
 				]
 			},
 		],
@@ -42,7 +43,8 @@ const config = {
 	resolve: {
 		extensions: ['.js', '.coffee'],
 		alias: {
-			comon: path.resolve(__dirname, '../ramda-extras')
+			'ramda-extras': path.resolve(__dirname, '../ramda-extras'),
+			popsiql: path.resolve(__dirname, '../popsiql/src/index')
 		}
 	},
 }

@@ -1,27 +1,65 @@
-import none from "ramda/es/none"; import path from "ramda/es/path"; import test from "ramda/es/test"; #auto_require: esramda
+import _test from "ramda/es/test"; #auto_require: _esramda
 import {} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
 import * as utils from './clientUtils'
 import {parseError} from '../shared/errors'
 
-please = "Couldn't reach server. Please check your connection and try again."
-please500 = "Something did not work... We're sorry, please contact support."
+defaults =
+	check: "Couldn't reach server. Please check your connection and try again."
+	500: "Something did not work... We're sorry, please contact support."
 
-export default xhr = ({popsiqlUrl, restUrl, on401}) ->
-	popsiqlApi:
-		post: (remoteQuery) ->
+export default xhr = ({popsiqlUrl, restUrl, on401, please500 = defaults['500'], pleaseCheck = defaults.check}) ->
+	rest = ({path, method, body, responseType = null, fileName = null}) ->
+			token = undefined # utils.getCookie('CSRF-TOKEN')
+			params = 
+				credentials: 'same-origin'
+				# credentials: 'include'
+				method: method
+				headers: {'Content-Type': 'application/json', 'CSRF-Token': token}
+
+			if method == 'POST' then params.body = JSON.stringify body
+			res = await fetch restUrl + path, params
+
+			if res.status == 401
+				# If we're not on a login page we should probably redirect to one
+				if ! _test(/\/login/, location.pathname)
+					on401()
+					return undefined
+				else
+					# If we are on a login page and calling a login endpoint, we're probably interested in the error
+					if _test(/\/login/, path)
+						ourError = await res.json()
+						throw new Error ourError.message
+					return undefined
+
+			else if res.status >= 200 && res.status < 400
+				if responseType == 'blob'
+					return handleFileDownload res, fileName
+				else return res.json()
+			else if res.status == 444
+				ourError = await res.json()
+				throw new Error ourError.message
+			else if res.status == 500
+				text = await res.text()
+				console.error text 
+				throw new Error please500
+			else
+				throw new Error pleaseCheck
+		
+
+	pop = (query, isRead) ->
 			token = undefined #utils.getCookie('CSRF-TOKEN')
-			res = await fetch popsiqlUrl,
+			url = "#{popsiqlUrl}/#{isRead && 'read' || 'write'}"
+			res = await fetch url,
 				credentials: 'same-origin'
 				# credentials: 'include'
 				method: 'POST'
 				headers: {'Content-Type': 'application/json', 'CSRF-Token': token}
-				body: JSON.stringify remoteQuery, (k, v) -> if v == undefined then null else v
+				body: JSON.stringify query, (k, v) -> if v == undefined then null else v
 
 			if res.status == 401
-				if ! test /\/login|\/logout/, location.pathname then on401()
-					# location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
+				if ! _test /\/login/, location.pathname then on401()
 			else if res.status >= 200 && res.status < 400
 				return res.json()
 			else if res.status == 444
@@ -29,82 +67,29 @@ export default xhr = ({popsiqlUrl, restUrl, on401}) ->
 				throw parseError err
 			else if res.status == 500
 				text = await res.text()
-				throw new Error "Popsiql(500)!" + text
-			else
-				throw new Error "XHR(Popsiql)!" + please
-
-	restApi:
-		post: (path, body, {responseType, fileName} = {}) ->
-			token = undefined # utils.getCookie('CSRF-TOKEN')
-			res = await fetch restUrl + path,
-				credentials: 'same-origin'
-				# credentials: 'include'
-				method: 'POST'
-				headers: {'Content-Type': 'application/json', 'CSRF-Token': token}
-				body: JSON.stringify body
-
-			if res.status == 401
-				if ! test /\/login|\/logout/, location.pathname
-					on401()
-					return undefined
-					# location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
-					# return undefined
-			else if res.status >= 200 && res.status < 400
-				if responseType == 'blob'
-					# https://stackoverflow.com/a/9970672/416797
-					blob = await res.blob()
-					url = window.URL.createObjectURL blob
-					a = document.createElement 'a'
-					a.style.display = 'none'
-					a.href = url
-					a.download = fileName
-					document.body.appendChild a
-					a.click()
-					window.URL.revokeObjectURL url
-					return undefined
-				else return res.json()
-			else if res.status == 444
-				ourError = await res.json()
-				throw new Error ourError.message
-			else if res.status == 500
-				text = await res.text()
+				console.error text 
 				throw new Error please500
 			else
-				throw new Error please
+				throw new Error pleaseCheck
 
-		get: (path, {responseType, fileName} = {}) ->
-			token = undefined #utils.getCookie('CSRF-TOKEN')
-			res = await fetch restUrl + path,
-				credentials: 'same-origin'
-				# credentials: 'include'
-				method: 'GET'
-				headers: {'Content-Type': 'application/json', 'CSRF-Token': token}
+	popsiqlApi:
+		read: (query) -> pop query true
+		write: (query) -> pop query, false
 
-			if res.status == 401
-				if ! test /\/login|\/logout/, location.pathname
-					on401()
-					# location.href = "/login?redirect=#{encodeURIComponent(location.pathname+location.search)}"
-					return undefined
-			else if res.status >= 200 && res.status < 400
-				if responseType == 'blob'
-					# https://stackoverflow.com/a/9970672/416797
-					blob = await res.blob()
-					url = window.URL.createObjectURL blob
-					a = document.createElement 'a'
-					a.style.display = 'none'
-					a.href = url
-					a.download = fileName
-					document.body.appendChild a
-					a.click()
-					window.URL.revokeObjectURL url
-					return undefined
-				else return res.json()
-			else if res.status == 444
-				text = await res.text()
-				throw new Error "Rest(444)!" + text
-			else if res.status == 500
-				text = await res.text()
-				throw new Error "Rest(500)!" + text
-			else
-				throw new Error "XHR-Rest(#{res.status})!" + please
+	restApi:
+		post: (path, body, {responseType, fileName} = {}) -> rest {path, method: 'POST', body, responseType, fileName}
+		get: (path, {responseType, fileName} = {}) -> rest {path, method: 'GET', responseType, fileName}
 
+
+handleFileDownload = (res, fileName) ->
+	# https://stackoverflow.com/a/9970672/416797
+	blob = await res.blob()
+	url = window.URL.createObjectURL blob
+	a = document.createElement 'a'
+	a.style.display = 'none'
+	a.href = url
+	a.download = fileName
+	document.body.appendChild a
+	a.click()
+	window.URL.revokeObjectURL url
+	return undefined

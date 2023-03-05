@@ -32,21 +32,30 @@ pg.types.setTypeParser(1082, parseDate)
 export default createDB = (config) ->
 	pool = config.pool
 
-	log = config.log || (ctx, args...) -> console.log args...
 
 	run = (ctx, sql, params = null, fullResult = false) ->
-		log ctx, sql
-		if params then log ctx, params
-		res = await pool.query sql, params
+		ctx.log sql
+		if params then ctx.log params
+		try
+			res = await pool.query sql, params
+		catch err
+			console.error '#################### DB-Error pool.query'
+			throw err
+
 		if fullResult then return res
 		else return res.rows
 
 	transaction = (ctx) ->
-		client = await pool.connect()
+		try
+			client = await pool.connect()
+		catch err
+			console.error '#################### DB-Error pool.connect'
+			throw err
+
 		# https://github.com/brianc/node-postgres/issues/433
 		clientQuery = (sql, params = null, fullResult = false) ->
-			log ctx, sql
-			if params then log ctx, params
+			ctx.log sql
+			if params then ctx.log params
 			res = await client.query sql, params
 			if fullResult then return res
 			else return res.rows

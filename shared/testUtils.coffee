@@ -25,8 +25,11 @@ feq.log = (a, b, c) ->
 	console.log 
 	assert.strictEqual(a, b, c)
 
-export throws = (re, f) -> assert.throws f, re
+export throws = (re, f) ->
+	re = if typeof re == 'string' then new RegExp re else re
+	assert.throws f, re
 throws.log = (re, f) ->
+	re = if typeof re == 'string' then new RegExp re else re
 	console.log f()
 	assert.throws f, re
 
