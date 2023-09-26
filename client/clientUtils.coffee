@@ -74,7 +74,9 @@ export getMouseOffset = (e, element = null) ->
 	rect = (element || e.target).getBoundingClientRect()
 	offsetTop = e.clientY - rect.top
 	offsetLeft = e.clientX - rect.left
-	return [offsetTop, offsetLeft]
+	offsetBottom = rect.bottom - e.clientY
+	offsetRight = rect.left - e.clientX
+	return [offsetTop, offsetRight, offsetBottom, offsetLeft]
 
 # https://www.w3schools.com/js/js_cookies.asp
 export getCookie = (cname) ->
@@ -106,13 +108,13 @@ export elementViewportOffset = (el) ->
 
 
 # Optimistically parses to Number or Boolean if needed
-autoParse = (val) ->
+export autoParseUrl = (val) ->
 	# if !isNaN(val) then Number(val) # disabling temporarily since mixing '102', and 'asldkjaslkd' ids in time and I'm tired
 	if val == 'true' then true
 	else if val == 'false' then false
 	else if _test(/^\[.*\]$/, val) # arrays eg. "[1, 2]" --> [1, 2]
 		if val == '[]' then []
-		else $ val[1...val.length-1], _split(','), _map autoParse
+		else $ val[1...val.length-1], _split(','), _map autoParseUrl
 	else val
 
 kvToQuery = ([k, v]) ->
@@ -129,7 +131,7 @@ export fromUrl = (url) ->
 	[path0, path1, path2, path3, path4] = if _isEmpty pathStr then [] else _split '/', pathStr
 	qs = $ queryStr || '', _split('&'), _map(_split('=')), _fromPairs
 
-	return $ {path0, path1, path2, path3, path4, ...qs}, _pickBy(isNotNil), _map(autoParse)
+	return $ {path0, path1, path2, path3, path4, ...qs}, _pickBy(isNotNil), _map(autoParseUrl)
 
 # Stringifies a query object to a url string
 # eg. {path0: 'p', path1: 'q', path2: 'r', a: 1, b: 2}' -> /p/q/r?a=1&b=2'
@@ -146,7 +148,7 @@ export navigate = (routerOrRouter, spec, options = {scroll: false, shallow: true
 	newUrl = toUrl change spec, urlQuery
 	routerOrRouter.push newUrl, null, options
 
-export prepareNavigate = (routerOrRouter, spec, options = {scroll: false, shallow: true}) ->
+export prepareNavigate = (routerOrRouter, spec) ->
 	asPath = routerOrRouter.asPath || routerOrRouter.router?.state?.asPath
 	# console.log 'asPath', asPath
 	urlQuery = fromUrl asPath

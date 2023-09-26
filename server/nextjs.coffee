@@ -87,7 +87,8 @@ handleError = (res, err) ->
 		res.status(444).json(stringifyError(err))
 	else
 		res.ctx.log.error err
-		throw err # throw any other kind so that nextjs error view in the browser works as expected
+		res.status(500).json(stringifyError(err))
+		# throw err # throw any other kind so that nextjs error view in the browser works as expected
 
 
 

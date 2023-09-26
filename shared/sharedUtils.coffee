@@ -1,4 +1,4 @@
-import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import match from "ramda/es/match"; import memoizeWith from "ramda/es/memoizeWith"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import toUpper from "ramda/es/toUpper"; import type from "ramda/es/type"; #auto_require: esramda
+import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import findIndex from "ramda/es/findIndex"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import match from "ramda/es/match"; import memoizeWith from "ramda/es/memoizeWith"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import type from "ramda/es/type"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
@@ -16,6 +16,13 @@ import quarterOfYear from 'dayjs/plugin/quarterOfYear'
 dayjs.extend quarterOfYear
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 dayjs.extend weekOfYear
+# import utc from 'dayjs/plugin/utc'
+# dayjs.extend utc
+
+# import timezone from 'dayjs/plugin/timezone'
+# dayjs.extend timezone
+# dayjs.tz.setDefault "America/New_York"
+
 # weekday = require 'dayjs/plugin/weekday'
 # dayjs.extend weekday
 import customParseFormat from 'dayjs/plugin/customParseFormat'
@@ -40,8 +47,10 @@ weekStartEnd = (yearWeek) ->
 	sundayOfWeek = dayInWeek.endOf 'week'
 	return {start: mondayOfWeek.format(_YYYYMMDD), end: sundayOfWeek.format(_YYYYMMDD)}
 
+
 # Proxy for date related utils
 export df =
+	dayjs: dayjs
 	# Mo = 0, Su = 6
 	dayOfWeek: (date) ->
 		dow = dayjs(date).day()
@@ -121,9 +130,9 @@ export toUrlFriendly = (s) ->
 # Many libraries behave different based on NODE_ENV in optimization, logging etc.
 # To keep environments as simialar as possible to prod we keep NODE_ENV set to production and use ENV instead.
 # Local: NODE_ENV=dev ENV=dev, Test: NODE_ENV=production ENV=test, Prod: NODE_ENV=production ENV=prod
-export isEnvProd = () -> process.env.ENV == 'prod'
-export isEnvProdOrTest = () -> process.env.ENV == 'prod' || process.env.ENV == 'test'
-export isEnvDev = () -> process.env.ENV == 'dev'
+export isEnvProd = () -> process.env.NEXT_PUBLIC_ENV == 'prod'
+export isEnvProdOrTest = () -> process.env.NEXT_PUBLIC_ENV == 'prod' || process.env.NEXT_PUBLIC_ENV == 'test'
+export isEnvDev = () -> process.env.NEXT_PUBLIC_ENV == 'dev'
 
 # Returns typical things for a country code, see example for 'CA' below
 export fromCountryCode = (countryCode_) ->
@@ -149,6 +158,17 @@ export formatCurrency = (amount, countryCode, removeZero = false, round = false,
 	if noSymbol then (amount / 100).toLocaleString(locale, {...opts, style: undefined, currency: undefined})
 	else new Intl.NumberFormat(locale, opts).format(amount / 100)
 
+# 150099, 'SE' -> '1 500,99 kr'
+# Note: amount is assumed in cents
+export formatNumber2 = (amount, countryCode, removeZero = false, round = false) ->
+	{currency, locale} = fromCountryCode countryCode || 'US'
+	extra =
+		if round || (removeZero && (amount % 100 == 0)) then {minimumFractionDigits: 0, maximumFractionDigits: 0}
+		else {maximumFractionDigits: 2}
+
+	# https://stackoverflow.com/q/44969852/416797
+	amount.toLocaleString(locale, {style: undefined, currency: undefined, ...extra})
+
 export exchangeRatesFromEuro = exchangeRates
 
 export byId = (xs) ->
@@ -162,7 +182,23 @@ export getNewRank = (rankBefore, rankAfter) ->
 	else if rankAfter then LexoRank.parse(rankAfter).genPrev().toString()
 	else LexoRank.middle().toString()
 
-# export formatNumber2 = (n, countryCode, )
+# returns new rank based on activeId (dragged item), overId (item dragged over) and the sorted list
+# 1, 4, [{id: 4, rank: '0|h1'}, {id: 1, rank: '0|h3'}, ...]
+export getNewRankFromList = (activeId, overId, list) ->
+	activeIndex = findIndex whereEq({id: activeId}), list
+	overIndex = findIndex whereEq({id: overId}), list
+	getRank = (index) -> list[index].rank
+
+	if overIndex == 0 then afterRank = getRank overIndex
+	else if overIndex == list.length - 1 then beforeRank = getRank overIndex
+	else if activeIndex > overIndex
+		beforeRank = getRank overIndex - 1
+		afterRank = getRank overIndex
+	else
+		beforeRank = getRank overIndex
+		afterRank = getRank overIndex + 1
+
+	return getNewRank beforeRank, afterRank
 
 # 23.1234 -> 23.12
 # 23.00, true -> 23
@@ -170,6 +206,11 @@ export getNewRank = (rankBefore, rankAfter) ->
 export formatNumber = (n, removeZero = false, decimals = 2) ->
 	if removeZero && n % 1 == 0 then return '' + n
 	return '' + n.toFixed decimals
+
+# 123132 -> 123 k
+export formatBigNumber = (n) ->
+	if n > 1000 then return Math.round(n / 1000) + ' k'
+	else return Math.round n
 
 # 8512 -> 8500
 # 851.123 -> 850
@@ -180,22 +221,23 @@ export roundTwoDigits = (n) ->
 
 export sleep = (ms) -> new Promise (resolve) -> setTimeout(resolve, ms)
 
-export formatPeriod = (start, end, now = Date.now()) ->
+export formatPeriod = (start, end, {now = Date.now(), long = false} = {}) ->
 	if df.isBefore end, start then return [null, 'Invalid period']
 	if !df.isValid start then return [null, 'Invalid start date']
 	if !df.isValid end then return [null, 'Invalid end date']
 
 	yearEnd = if df.isSame end, now, 'year' then '' else " #{df.format 'YYYY', end}"
+	fM = if long then 'MMMM' else 'MMM'
 
 	if df.isSame df.startOf('month', start), start, 'day'
 		if df.isSame df.endOf('month', start), end, 'day'
 			extra = if df.isSame end, now, 'year' then '' else ' ' + df.format('YYYY', start)
-			return ['month', "#{toUpper df.format('MMM', start)}#{extra}"]
+			return ['month', "#{df.format(fM, start)}#{extra}"]
 
 	if df.isSame df.startOf('week', start), start, 'day'
 		if df.isSame df.endOf('week', start), end, 'day'
-			startMMM = df.format('MMM', start)
-			endMMM = df.format('MMM', end)
+			startMMM = df.format(fM, start)
+			endMMM = df.format(fM, end)
 			extra = if startMMM == endMMM then '' else endMMM + ' '
 			return ['week', "#{startMMM} #{df.format('D', start)} - #{extra}#{df.format('D', end)}#{yearEnd}"]
 
@@ -207,8 +249,8 @@ export formatPeriod = (start, end, now = Date.now()) ->
 		if df.isSame df.endOf('year', end), end, 'day'
 			return ['year', "#{df.format('YYYY', start)}"]
 
-	return ['custom', "#{df.format('MMM', start)} #{df.format('D', start)} - 
-	#{df.format('MMM', end)} #{df.format('D', end)}#{yearEnd}"]
+	return ['custom', "#{df.format(fM, start)} #{df.format('D', start)} - 
+	#{df.format(fM, end)} #{df.format('D', end)}#{yearEnd}"]
 
 # TIME e.g. 0:10, 2:50 ----------------------------------------------------------------------------
 export toHMM = (n) ->
@@ -253,3 +295,28 @@ export trycatch = (promise) ->
 		return res
 	catch err
 		return undefined
+
+# Given a y-value, returns 3 y-values to segment in a "nice" way, eg. 25, 50 75.
+# The definition of a "nice" way is not obvious. Now going for 0, 25, 50, 75 break-points.
+# Tried google and ChatGPT to find a common way of doing this but without success. The current approach is
+# probably not the best but good enough for now.
+export niceLines = (yValue) ->
+	by3unscaled = (yValue * 1.2) / 3
+	scale = 10 ** ((Math.floor(by3unscaled) + '').length - 1)
+	by3 = by3unscaled / scale
+	factor = 1
+
+	if by3 % 1 == 0 then factor = by3
+	else if by3 < 1 then throw new Error 'nyi'
+	else if by3 < 1.5 then factor = 1.0
+	else if by3 < 2.5 then factor = 1.5
+	else if by3 < 3.0 then factor = 2.5
+	else if by3 < 5.0 then factor = 2.5
+	else if by3 < 6.0 then factor = 5.0
+	else if by3 < 7.0 then factor = 5.0
+	else if by3 < 8.0 then factor = 7.5
+	else if by3 < 9.0 then factor = 7.5
+	else if by3 < 10.0 then factor = 7.5
+	else throw new Error 'nyi'
+
+	return [factor * scale, factor * scale * 2, factor * scale * 3]

@@ -57,6 +57,7 @@ export default createPDB = (config) ->
 		read = (query) -> readF ctx, query, runner, false, false
 		read.normalized = (query) -> readF ctx, query, runner, true, false
 		read.unsafe = (query) -> readF ctx, query, runner, false, true
+		read.unsafeNormalized = (query) -> readF ctx, query, runner, true, true
 
 		write = (delta) -> writeF ctx, delta, runner, false
 		write.unsafe = (delta) -> writeF ctx, delta, runner, true
@@ -67,7 +68,7 @@ export default createPDB = (config) ->
 		tr = await getTransaction ctx
 		try
 			await tr.begin()
-			result = await fn {read: tr.read, write: tr.write}
+			result = await fn {read: tr.read, write: tr.write, run: tr.run}
 			await tr.commit()
 			return result
 		catch err
@@ -81,6 +82,7 @@ export default createPDB = (config) ->
 		read = (query) -> readF ctx, query, defaultRunner(ctx), false, false
 		read.normalized = (query) -> readF ctx, query, defaultRunner(ctx), true, false
 		read.unsafe = (query) -> readF ctx, query, defaultRunner(ctx), false, true
+		read.unsafeNormalized = (query) -> readF ctx, query, defaultRunner(ctx), true, true
 
 		write = (delta) -> writeF ctx, delta, defaultRunner(ctx), false
 		write.unsafe = (delta) -> writeF ctx, delta, defaultRunner(ctx), true

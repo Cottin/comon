@@ -1,3 +1,7 @@
+# Philosophy
+# No need for an error code, instead make the message good enough for you to identify where error occured
+# if a user reports it.
+
 
 # Something in user input is not valid
 export class ValidationError extends Error

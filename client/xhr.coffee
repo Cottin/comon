@@ -7,18 +7,24 @@ import {parseError} from '../shared/errors'
 
 defaults =
 	check: "Couldn't reach server. Please check your connection and try again."
-	500: "Something did not work... We're sorry, please contact support."
+	500: "An unknown error has occurred"
+
+replacer = (key, value) ->
+	return if value == undefined then '__UNDEFINED_$%&_' else value
 
 export default xhr = ({popsiqlUrl, restUrl, on401, please500 = defaults['500'], pleaseCheck = defaults.check}) ->
-	rest = ({path, method, body, responseType = null, fileName = null}) ->
+	rest = ({path, method, body, responseType = null, fileName = null, rawBody = false}) ->
 			token = undefined # utils.getCookie('CSRF-TOKEN')
 			params = 
 				credentials: 'same-origin'
 				# credentials: 'include'
 				method: method
-				headers: {'Content-Type': 'application/json', 'CSRF-Token': token}
 
-			if method == 'POST' then params.body = JSON.stringify body
+			if rawBody then params.headers = {'CSRF-Token': token}
+			else params.headers = {'Content-Type': 'application/json', 'CSRF-Token': token}
+
+			if method == 'POST'
+				params.body = if rawBody then body else JSON.stringify body, replacer
 			res = await fetch restUrl + path, params
 
 			if res.status == 401
@@ -77,7 +83,8 @@ export default xhr = ({popsiqlUrl, restUrl, on401, please500 = defaults['500'], 
 		write: (query) -> pop query, false
 
 	restApi:
-		post: (path, body, {responseType, fileName} = {}) -> rest {path, method: 'POST', body, responseType, fileName}
+		post: (path, body, {responseType, fileName, rawBody} = {}) ->
+			rest {path, method: 'POST', body, responseType, fileName, rawBody}
 		get: (path, {responseType, fileName} = {}) -> rest {path, method: 'GET', responseType, fileName}
 
 

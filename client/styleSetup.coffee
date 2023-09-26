@@ -1,8 +1,8 @@
 import has from "ramda/es/has"; import includes from "ramda/es/includes"; import isNil from "ramda/es/isNil"; import join from "ramda/es/join"; import map from "ramda/es/map"; import min from "ramda/es/min"; import none from "ramda/es/none"; import reject from "ramda/es/reject"; import remove from "ramda/es/remove"; import reverse from "ramda/es/reverse"; import split from "ramda/es/split"; import splitEvery from "ramda/es/splitEvery"; import test from "ramda/es/test"; import type from "ramda/es/type"; #auto_require: esramda
 import {change, $, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 
-import React from 'react'
-import {RendererProvider} from 'react-fela'
+import React, {useContext} from 'react'
+import {RendererProvider, RendererContext} from 'react-fela'
 import {createRenderer} from 'fela'
 import webPreset from 'fela-preset-web'
 import shortstyle from 'shortstyle'
@@ -125,6 +125,10 @@ export default styleSetup = ({families, bg, styleMaps, colors, staticBefore = ''
 		return React.createElement RendererProvider, {renderer},
 				children
 
+	useFela = () ->
+		renderer = useContext RendererContext
+		return (s) ->
+			return renderer.renderRule (-> parseShortstyle s), {}
 
 
 	parseShortstyle = shortstyle {styleMaps, colors, families}
@@ -225,6 +229,6 @@ export default styleSetup = ({families, bg, styleMaps, colors, staticBefore = ''
 
 	arrayOrRenderer.colors = colors
 
-	return {felaRenderer, FelaProvider, createElementFela, arrayOrRenderer}
+	return {felaRenderer, FelaProvider, createElementFela, arrayOrRenderer, useFela}
 
 
