@@ -2,6 +2,7 @@ import _fromPairs from "ramda/es/fromPairs"; import _init from "ramda/es/init"; 
 import {change, $, isNotNil} from "ramda-extras" #auto_require: esramda-extras
 
 import React from 'react'
+import {sleep} from '../shared/sharedUtils'
 
 # Shared utils
 # TODO: figure out way to add all from sharedUtils
@@ -58,6 +59,14 @@ export flattenEntity = (o) ->
 			else throw new Error 'NYI'
 	return res
 
+# Sometimes an call to the server can be too fast resulting in a blinking UI.
+# This assures that an async call takes minimum the supplied delay so spinners have time to render
+export minDelay = (delay, promise) ->
+	start = performance.now()
+	res = await promise
+	delta = delay - (performance.now() - start)
+	if delta > 0 then await sleep delta
+	return res
 
 ########## BROWSER ###########################################################################################
 export keyCodes =
