@@ -159,12 +159,12 @@ export navigate = (routerOrRouter, spec, options = {scroll: false, shallow: true
 
 export prepareNavigate = (routerOrRouter, spec) ->
 	asPath = routerOrRouter.asPath || routerOrRouter.router?.state?.asPath
-	# console.log 'asPath', asPath
-	urlQuery = fromUrl asPath
-	# console.log 'urlQuery', urlQuery
+	# NOTE: On server: projects=%5B5%2C101%5D  On client: projects=[5,101] 
+	#				Generates "Warning: Prop `href` did not match" in next js
+	# 			Solution below is to always decode the asPath (decoding projects=[5,101] returns projects=[5,101])
+	decodedAsPath = decodeURIComponent asPath
+	urlQuery = fromUrl decodedAsPath
 	newUrl = toUrl change spec, urlQuery
-	# console.log 'newUrlObj', 	change spec, urlQuery
-	# console.log 'newUrl', newUrl
 	return newUrl
 
 
