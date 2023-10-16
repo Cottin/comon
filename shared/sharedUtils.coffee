@@ -1,4 +1,4 @@
-import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import findIndex from "ramda/es/findIndex"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import match from "ramda/es/match"; import memoizeWith from "ramda/es/memoizeWith"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import type from "ramda/es/type"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
+import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import findIndex from "ramda/es/findIndex"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import match from "ramda/es/match"; import max from "ramda/es/max"; import memoizeWith from "ramda/es/memoizeWith"; import min from "ramda/es/min"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import type from "ramda/es/type"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
@@ -320,3 +320,27 @@ export niceLines = (yValue) ->
 	else throw new Error 'nyi'
 
 	return [factor * scale, factor * scale * 2, factor * scale * 3]
+
+export calcNicePeriod = (min, max) ->
+	if min > max then throw new Error 'min bigger than max'
+	[minYear, minMonth] = [min.substring(0, 4), min.substring(5, 7)]
+	[maxYear, maxMonth] = [max.substring(0, 4), max.substring(5, 7)]
+
+	if minYear == maxYear
+		if minMonth == maxMonth then return "m#{minYear}-#{minMonth}-01"
+		else return "y#{minYear}-01-01"
+
+	# Note that there are room for improvements here
+	return 'total'
+
+
+
+
+
+
+
+
+
+
+
+
