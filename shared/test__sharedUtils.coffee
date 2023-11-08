@@ -39,7 +39,10 @@ describe 'sharedUtils', () ->
 		it 'year', -> deepEq ['year', '2021'], q.formatPeriod '2021-01-01', '2021-12-31', {now}
 
 		it '7', -> deepEq ['week', 'Jul 6 - 12 2020'], q.formatPeriod '2020-07-06', '2020-07-12', {now}
-		it '8', -> deepEq ['custom', 'May 3 - May 10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
+		it 'custom', -> deepEq ['custom', 'May 3 - Jun 10'], q.formatPeriod '2021-05-03', '2021-06-10', {now}
+		it 'custom same', -> deepEq ['custom', 'May 3 - 10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
+		it 'custom same different years', -> deepEq ['custom', 'May 3 2020 - May 10 2021'], q.formatPeriod '2020-05-03', '2021-05-10', {now}
+		it.only 'custom same day', -> deepEq ['custom', 'May 3'], q.formatPeriod '2021-05-03', '2021-05-03', {now}
 
 		it '0', -> deepEq [null, 'Invalid period'], q.formatPeriod '2021-07-06', '2020-07-12', {now}
 		it '8', -> deepEq [null, 'Invalid start date'], q.formatPeriod '2021-02-32', '2021-07-12', {now}
@@ -54,7 +57,7 @@ describe 'sharedUtils', () ->
 		it 'week long', -> deepEq ['week', 'April 26 - May 2'], q.formatPeriod '2021-04-26', '2021-05-02', {now, long: true}
 		it 'quarter long', -> deepEq ['quarter', 'Q2 2021'], q.formatPeriod '2021-04-01', '2021-06-30', {now, long: true}
 		it '7 long', -> deepEq ['week', 'July 6 - 12 2020'], q.formatPeriod '2020-07-06', '2020-07-12', {now, long: true}
-		it '8 long', -> deepEq ['custom', 'April 3 - April 10'], q.formatPeriod '2021-04-03', '2021-04-10', {now, long: true}
+		it '8 long', -> deepEq ['custom', 'April 3 - 10'], q.formatPeriod '2021-04-03', '2021-04-10', {now, long: true}
 		it '11 long', -> deepEq ['quarter', 'Q2 2020'], q.formatPeriod '2020-04-01', '2020-06-30', {now, long: true}
 		it '12 long', -> deepEq ['year', '2020'], q.formatPeriod '2020-01-01', '2020-12-31', {now, long: true}
 
@@ -121,6 +124,7 @@ describe 'sharedUtils', () ->
 		it '0', () -> eq 'm2023-05-01', q.calcNicePeriod '2023-05-01', '2023-05-30'
 		it '1', () -> eq 'y2023-01-01', q.calcNicePeriod '2023-05-01', '2023-06-03'
 		it '3', () -> eq 'total', q.calcNicePeriod '2022-05-01', '2023-06-03'
+		# it '4', () -> eq '2023-03-05-2023-06-12', q.calcNicePeriod '2023-03-05', '2023-06-12'
 
 
 

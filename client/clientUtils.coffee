@@ -118,7 +118,10 @@ export elementViewportOffset = (el) ->
 
 # Optimistically parses to Number or Boolean if needed
 export autoParseUrl = (val) ->
-	# if !isNaN(val) then Number(val) # disabling temporarily since mixing '102', and 'asldkjaslkd' ids in time and I'm tired
+	# disabling temporarily since mixing '102', and 'asldkjaslkd' ids in time and I'm tired.
+	# Real solution probably to clean up ids in test cus it's not obvious if there's an easy way of handling
+	# mixing of numbers and strings.
+	# if !isNaN(val) then Number(val) 
 	if val == 'true' then true
 	else if val == 'false' then false
 	else if _test(/^\[.*\]$/, val) # arrays eg. "[1, 2]" --> [1, 2]

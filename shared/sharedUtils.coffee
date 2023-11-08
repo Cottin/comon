@@ -227,6 +227,8 @@ export formatPeriod = (start, end, {now = Date.now(), long = false} = {}) ->
 	if !df.isValid end then return [null, 'Invalid end date']
 
 	yearEnd = if df.isSame end, now, 'year' then '' else " #{df.format 'YYYY', end}"
+	yearStart = if df.isSame start, now, 'year' then '' else " #{df.format 'YYYY', start}"
+	if yearStart != '' then yearEnd = " #{df.format 'YYYY', end}"
 	fM = if long then 'MMMM' else 'MMM'
 
 	if df.isSame df.startOf('month', start), start, 'day'
@@ -249,8 +251,14 @@ export formatPeriod = (start, end, {now = Date.now(), long = false} = {}) ->
 		if df.isSame df.endOf('year', end), end, 'day'
 			return ['year', "#{df.format('YYYY', start)}"]
 
-	return ['custom', "#{df.format(fM, start)} #{df.format('D', start)} - 
-	#{df.format(fM, end)} #{df.format('D', end)}#{yearEnd}"]
+	if df.isSame start, end, 'day'
+		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)}#{yearEnd}"]
+
+	if df.isSame start, end, 'month'
+		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)} - #{df.format('D', end)}#{yearEnd}"]
+	else
+		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)}#{yearStart} - 
+		#{df.format(fM, end)} #{df.format('D', end)}#{yearEnd}"]
 
 # TIME e.g. 0:10, 2:50 ----------------------------------------------------------------------------
 export toHMM = (n) ->
