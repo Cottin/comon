@@ -1,4 +1,4 @@
-import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import findIndex from "ramda/es/findIndex"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import match from "ramda/es/match"; import max from "ramda/es/max"; import memoizeWith from "ramda/es/memoizeWith"; import min from "ramda/es/min"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import type from "ramda/es/type"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
+import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import dec from "ramda/es/dec"; import find from "ramda/es/find"; import findIndex from "ramda/es/findIndex"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import match from "ramda/es/match"; import max from "ramda/es/max"; import memoizeWith from "ramda/es/memoizeWith"; import min from "ramda/es/min"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import toUpper from "ramda/es/toUpper"; import type from "ramda/es/type"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
@@ -47,6 +47,7 @@ weekStartEnd = (yearWeek) ->
 	sundayOfWeek = dayInWeek.endOf 'week'
 	return {start: mondayOfWeek.format(_YYYYMMDD), end: sundayOfWeek.format(_YYYYMMDD)}
 
+MMMs = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 
 # Proxy for date related utils
 export df =
@@ -104,6 +105,7 @@ export df =
 			daysToRemove = if day == 0 then 6 else day - 1 # sunday: 0, saturday: 6
 			newDate.setDate(newDate.getDate() - daysToRemove)
 			return newDate.toLocaleDateString('sv-SE')
+		toMMM: (idx) -> MMMs[idx]
 
 
 
@@ -134,19 +136,30 @@ export isEnvProd = () -> process.env.NEXT_PUBLIC_ENV == 'prod'
 export isEnvProdOrTest = () -> process.env.NEXT_PUBLIC_ENV == 'prod' || process.env.NEXT_PUBLIC_ENV == 'test'
 export isEnvDev = () -> process.env.NEXT_PUBLIC_ENV == 'dev'
 
+
 # Returns typical things for a country code, see example for 'CA' below
 export fromCountryCode = (countryCode_) ->
 	# https://github.com/srcagency/country-currencies SE -> SEK
 	countryCode = countryCode_ || 'US' # fallback since we almost always want fallback
 	three = clm.getAlpha3ByAlpha2 countryCode # CA -> CAN
 	locale_ = clm.getLocaleByAlpha2(countryCode)
-	locale = if locale_ then replace '_', '-', locale_# CA -> en-CA
+	locale = if locale_ then replace(/_/g, '-', locale_)# CA -> en-CA
 	name = clm.getCountryNameByAlpha2 countryCode # CA -> Canada
 	currency = clm.getCurrencyByAlpha2 countryCode # CA -> CAD 
 	return {three, locale, name, currency}
 
+ 
+
+
+export fromCurrency = (currency) ->
+	countries = clm.getAllCountries()
+	country = $ countries, find whereEq({currency})
+	return fromCountryCode country?.alpha2
+
+
 # 150099, 'SE' -> '1 500,99 kr'
 # Note: amount is assumed in cents
+# Opti: note that this is quite expensive
 export formatCurrency = (amount, countryCode, removeZero = false, round = false, noSymbol = false) ->
 	{currency, locale} = fromCountryCode countryCode || 'US'
 	extra =
@@ -168,6 +181,100 @@ export formatNumber2 = (amount, countryCode, removeZero = false, round = false) 
 
 	# https://stackoverflow.com/q/44969852/416797
 	amount.toLocaleString(locale, {style: undefined, currency: undefined, ...extra})
+
+
+
+
+# Returns a formatting object for basic number and currency formatting given a country code.
+# Intl.NumberFormat and toLocaleString are good but quite slow so 
+# the idea is to call them to extract their good results to be used in cheaper formatting (see below).
+# Note: probably only run this code at server and send result to client, don't include this in client bundle
+# because clm is probably unnessesary big given that you most likely only need the formatting for one country.
+#
+# 'US'returns {thousandSeparator: ',', decimalPoint: '.', currencySymbol: '$', currencyBefore: true}
+# 'SE'returns {thousandSeparator: ' ', decimalPoint: ',', currencySymbol: ' kr', currencyBefore: false}
+export defaultFormattingFor = memoizeWith String, (countryCode_ = 'US') ->
+	# https://github.com/srcagency/country-currencies SE -> SEK
+	countryCode = toUpper countryCode_
+	locale = replace '_', '-', clm.getLocaleByAlpha2(countryCode) # CA -> en-CA
+	currency = clm.getCurrencyByAlpha2 countryCode # CA -> CAD 
+
+	nbs = ' ' # non-breaking space
+
+	try 
+		numStr = 1234.56.toLocaleString(locale, {style: undefined, currency: undefined})
+		if numStr == '1,234.56' then thousandSeparator = ','; decimalPoint = '.'
+		else if numStr == '1.234,56' then thousandSeparator = '.'; decimalPoint = ','
+		else if numStr == '1\'234.56' then thousandSeparator = '\''; decimalPoint = '.'
+		else if numStr == '1'+nbs+'234,56' then thousandSeparator = nbs; decimalPoint = ','
+		else thousandSeparator = ','; decimalPoint = '.' # fallback to US standard
+
+	catch err # fallback to US standard
+		thousandSeparator = ',' 
+		decimalPoint = '.'
+
+	try
+		opts = {style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0}
+		curStr = new Intl.NumberFormat(locale, opts).format(1)
+		if test(/^1 /, curStr) then currencyBefore = false; currencySpace = true
+		else if test(/^1/, curStr) then currencyBefore = false; currencySpace = false
+		else if test(/1 $/, curStr) then currencyBefore = true; currencySpace = true
+		else if test(/1$/, curStr) then currencyBefore = true; currencySpace = false
+		else currencySymbol = currency; currencyBefore = false; currencySpace = true;
+
+		currencySymbol = $ curStr, replace('1', ''), replace(nbs, '')
+
+	catch err # fallback to the letter currency and before
+		currencySymbol = currency
+		currencyBefore = false
+		currencySpace = true
+
+	return {thousandSeparator, decimalPoint, currencySymbol, currencyBefore, currencySpace}
+
+
+export defaultUS = defaultFormattingFor 'US'
+
+
+# This is a bit crazy, yes!
+# But built-in formatting like
+# 	- .toLocaleString
+# 	- and new Intl.NumberFormat(...).format
+# seem to be quite slow.
+# Typical selectors in Time gets noticably slower (adding 4ms - 50ms) which is not fun.
+# This is an experiment to make a good enough formatter that is decently fast.
+#
+# formatNumberFast 1234.56, {form: defaultSE, toFixed: 0, currency: null} returns '1 235'
+# formatNumberFast 1234.56, {form: defaultUS, toFixed: 2, currency: 'symbol'} returns '$1,234.56'
+# formatNumberFast 1234.56, {form: defaultSE, toFixed: 2, currency: 'symbol'} returns '1 234,56 kr'
+# formatNumberFast 1234.00, {form: defaultSE, toFixed: 2, removeZero: true, currency: null} returns '1 234'
+export formatNumberFast = (num, {form = defaultUS, toFixed = 2, removeZero = false, currency = null} = {}) ->
+	s = ''
+	snum = Math.trunc(num) + ''
+	for i in [0...snum.length]
+		if (snum.length - i) % 3 == 0 && i > 0 then s += form.thousandSeparator
+		s += snum[i]
+
+	if toFixed > 0 && !(num % 1 == 0 && removeZero)
+		s += form.decimalPoint + (num % 1).toFixed(toFixed).substring(2)
+
+	if currency == 'symbol'
+		nbs = ' ' # non-breaking space
+		currencySpaceOrEmpty = if form.currencySpace then nbs else ''
+		if form.currencyBefore then s = form.currencySymbol + currencySpaceOrEmpty + s
+		else s += currencySpaceOrEmpty + form.currencySymbol
+	else if currency == 'separate' || currency == 'separateTrim'
+		nbs = ' ' # non-breaking space
+		ret = []
+		before = if form.currencyBefore then form.currencySymbol else null
+		sWithSpace = s
+		if form.currencySpace && currency != 'separateTrim'
+			if form.currencyBefore then sWithSpace = nbs + s
+			else sWithSpace = s + nbs
+		after = if !form.currencyBefore then form.currencySymbol else null
+		return [before, sWithSpace, after]
+
+	return s
+
 
 export exchangeRatesFromEuro = exchangeRates
 

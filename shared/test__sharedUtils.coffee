@@ -17,6 +17,35 @@ describe 'sharedUtils', () ->
 		it '2', () -> eq '23', q.formatNumber 23.00, true
 		it '3', () -> eq '23.12346', q.formatNumber 23.123456, true, 5
 
+	# nonBreakingSpace = ' ' # use this in tests for currencies
+
+	describe 'defaultFormattingFor', () ->
+		fUS = q.defaultFormattingFor 'US'
+		it 'SE', () -> 
+			fSE = q.defaultFormattingFor 'SE'
+			deepEq {currencyBefore: false, currencySymbol: 'kr', currencySpace: true, decimalPoint: ',', thousandSeparator: ' '}, fSE
+
+		it 'US', () -> 
+			fUS = q.defaultFormattingFor 'US'
+			deepEq {currencyBefore: true, currencySymbol: '$', currencySpace: false, decimalPoint: '.', thousandSeparator: ','}, fUS
+
+	describe.only 'formatNumberFast', () ->
+		fSE = q.defaultFormattingFor 'SE'
+		fUS = q.defaultFormattingFor 'US'
+		it '1', () -> eq '12 345 678,1234', q.formatNumberFast 12345678.12345, {form: fSE, toFixed: 4}
+		it '2', () -> eq '12 345 678', q.formatNumberFast 12345678.12345, {form: fSE, toFixed: 0}
+		it '3', () -> eq '123,4', q.formatNumberFast 123.4, {form: fSE, toFixed: 1}
+		it '4', () -> eq '12 345 678,12 kr', q.formatNumberFast 12345678.12345, {form: fSE, toFixed: 2, currency: 'symbol'}
+		it '5', () -> eq '123,00', q.formatNumberFast 123, {form: fSE, toFixed: 2}
+		it '6', () -> eq '123', q.formatNumberFast 123, {form: fSE, toFixed: 2, removeZero: true}
+		it '7', () -> eq '$4,638', q.formatNumberFast 4638.00, {form: fUS, removeZero: true, currency: 'symbol'}
+		it '1 US', () -> eq '12,345,678.1234', q.formatNumberFast 12345678.12345, {form: fUS, toFixed: 4}
+		it '4 US', () -> eq '$12,345,678.12', q.formatNumberFast 12345678.12345, {form: fUS, toFixed: 2, currency: 'symbol'}
+		it 'AZ (Azarbajan, tests fallbacks)', () -> eq 'AZN', q.defaultFormattingFor('AZ').currencySymbol
+		it '3 SE separate', () -> deepEq [null, '123,4 ', 'kr'], q.formatNumberFast 123.4, {form: fSE, toFixed: 1, currency: 'separate'}
+		it '3 US separate', () -> deepEq ['$', '123.4', null], q.formatNumberFast 123.4, {form: fUS, toFixed: 1, currency: 'separate'}
+		it '3 SE separateTrim', () -> deepEq [null, '123,4', 'kr'], q.formatNumberFast 123.4, {form: fSE, toFixed: 1, currency: 'separateTrim'}
+
 	describe 'formatBigNumber', () ->
 		it '1', () -> eq '100 k', q.formatBigNumber 100410
 
@@ -42,7 +71,7 @@ describe 'sharedUtils', () ->
 		it 'custom', -> deepEq ['custom', 'May 3 - Jun 10'], q.formatPeriod '2021-05-03', '2021-06-10', {now}
 		it 'custom same', -> deepEq ['custom', 'May 3 - 10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
 		it 'custom same different years', -> deepEq ['custom', 'May 3 2020 - May 10 2021'], q.formatPeriod '2020-05-03', '2021-05-10', {now}
-		it.only 'custom same day', -> deepEq ['custom', 'May 3'], q.formatPeriod '2021-05-03', '2021-05-03', {now}
+		it 'custom same day', -> deepEq ['custom', 'May 3'], q.formatPeriod '2021-05-03', '2021-05-03', {now}
 
 		it '0', -> deepEq [null, 'Invalid period'], q.formatPeriod '2021-07-06', '2020-07-12', {now}
 		it '8', -> deepEq [null, 'Invalid start date'], q.formatPeriod '2021-02-32', '2021-07-12', {now}
@@ -118,7 +147,7 @@ describe 'sharedUtils', () ->
 		it '5a', () -> deepEq [75, 150, 225], q.niceLines 210
 		it '6a', () -> deepEq [100, 200, 300], q.niceLines 270
 
-	describe.only 'calcNicePeriod', () ->
+	describe 'calcNicePeriod', () ->
 		it 'wrong', () ->
 			throws(/min bigger than max/, -> q.calcNicePeriod '2023-05-30', '2023-05-04')
 		it '0', () -> eq 'm2023-05-01', q.calcNicePeriod '2023-05-01', '2023-05-30'
