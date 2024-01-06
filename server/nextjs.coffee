@@ -37,6 +37,11 @@ export createEndpoint = (config, model) ->
 
 	return (spec, f, meta = {}) ->
 		return (req, res) ->
+			console.log 'res'
+			console.log 'res.status', res.status
+			console.log 'res.end', res.end
+			console.log '--------------------------------------------------------------------------------' 
+			# console.log 'req', req
 			# if req.method != 'POST' then throw new Error 'Not correct'
 
 
@@ -76,6 +81,7 @@ handleError = (res, err) ->
 	console.log 'handleError', err, 'err instanceof AuthError', err instanceof AuthError, 'type:', _type(err)
 	if err instanceof AuthError
 		res.ctx.log.error err
+		# console.log 'wwwwwwwwwwwwwwww res', res
 		res.status(401).json(stringifyError(err))
 	else if err instanceof ValidationError ||
 					err instanceof FaultError ||
@@ -91,7 +97,19 @@ handleError = (res, err) ->
 		# throw err # throw any other kind so that nextjs error view in the browser works as expected
 
 
-
+# We might want to create a context in other places than for endpoints, eg. in getServerSideProps.
+# Returns a ctx by creating and calling a fake endpoint.
+# This is a test, not sure if it has too much negative impact on performance.
+export createContext = (config, model, req, res) ->
+	console.log 7 
+	fakeEndpointF = createEndpoint config, model
+	fakeApiF = (a, ctx, req, res) -> return ctx
+	fakeApiEndpoint = fakeEndpointF {}, fakeApiF, {isPublic: false}
+	res.json = (x) -> x
+	console.log 8 
+	ctx = await fakeApiEndpoint req, res
+	console.log 9 
+	return ctx
 
 
 
