@@ -7,7 +7,7 @@
   "scripts": {
     "test": "npm-run-all clean-temp --parallel webpack-test jest trap",
     "webpack-test": "webpack --watch",
-    "jest": "jest --watchAll",
+    "jest": "jest --watchAll --verbose=false",
     "clean-temp": "rimraf ./temp",
     "trap": "../hack/temp_trap"
   },
@@ -34,11 +34,8 @@
     "pg-native": "^3.0.0",
     "ramda": "^0.27.1",
     "ramda-extras": "^0.4.20",
-    "react-fela": "^11.6.1",
+    "react-fela": "^11.7.0",
     "shortstyle": "^0.1.53"
-  },
-  "peerDependencies": {
-    "react": "17.0.2"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.15.4",
