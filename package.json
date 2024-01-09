@@ -23,6 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@babel/runtime": "^7.15.3",
+    "@vercel/postgres": "^0.5.1",
     "country-locale-map": "^1.8.0",
     "date-fns": "^2.29.3",
     "dayjs": "^1.10.6",
