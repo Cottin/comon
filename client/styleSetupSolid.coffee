@@ -1,4 +1,4 @@
-import has from "ramda/es/has"; import min from "ramda/es/min"; import none from "ramda/es/none"; import props from "ramda/es/props"; import remove from "ramda/es/remove"; import type from "ramda/es/type"; #auto_require: esramda
+ #auto_require: _esramda
 import {} from "ramda-extras" #auto_require: esramda-extras
 
 import {createRenderer} from 'fela'

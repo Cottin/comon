@@ -1,4 +1,4 @@
-empty = require('ramda/src/empty'); max = require('ramda/src/max'); min = require('ramda/src/min'); test = require('ramda/src/test'); #auto_require: srcramda
+ #auto_require: _esramda
 import {$} from "ramda-extras" #auto_require: esramda-extras
 [] = [] #auto_sugar
 

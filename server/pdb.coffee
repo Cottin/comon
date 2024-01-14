@@ -1,4 +1,4 @@
-import both from "ramda/es/both"; import curry from "ramda/es/curry"; import empty from "ramda/es/empty"; import length from "ramda/es/length"; import type from "ramda/es/type"; #auto_require: esramda
+import _length from "ramda/es/length"; import _type from "ramda/es/type"; #auto_require: _esramda
 import {isNilOrEmpty, sf2} from "ramda-extras" #auto_require: esramda-extras
 
 import {popsiql, popSql} from 'popsiql'
@@ -99,13 +99,13 @@ export default createPDB = (config) ->
 
 # Entity specific string shortener
 toShortString = (x) ->
-	if 'Array' == type x
-		len = length x
+	if 'Array' == _type x
+		len = _length x
 		if len == 0 then return "[] (empty)"
 		else if len == 1 then return "[ {} ] (1 item)"
 		else if len == 2 then return "[ {}, {} ] (2 items)"
 		else if len > 2 then return "[ {}, {}, ... ] (#{len} items)"
-	else if 'Object' == type x
+	else if 'Object' == _type x
 		return "{ id: #{x.id}, ... }"
 	else
 		return x

@@ -1,6 +1,5 @@
  #auto_require: _esramda
 import {} from "ramda-extras" #auto_require: esramda-extras
-import util from 'util'
 
 import {db} from '@vercel/postgres'
 

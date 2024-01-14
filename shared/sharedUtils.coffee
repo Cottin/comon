@@ -1,4 +1,4 @@
-import clone from "ramda/es/clone"; import curry from "ramda/es/curry"; import dec from "ramda/es/dec"; import find from "ramda/es/find"; import findIndex from "ramda/es/findIndex"; import isNil from "ramda/es/isNil"; import length from "ramda/es/length"; import map from "ramda/es/map"; import match from "ramda/es/match"; import max from "ramda/es/max"; import memoizeWith from "ramda/es/memoizeWith"; import min from "ramda/es/min"; import replace from "ramda/es/replace"; import split from "ramda/es/split"; import test from "ramda/es/test"; import toLower from "ramda/es/toLower"; import toUpper from "ramda/es/toUpper"; import type from "ramda/es/type"; import whereEq from "ramda/es/whereEq"; #auto_require: esramda
+import _clone from "ramda/es/clone"; import _curry from "ramda/es/curry"; import _find from "ramda/es/find"; import _findIndex from "ramda/es/findIndex"; import _isNil from "ramda/es/isNil"; import _match from "ramda/es/match"; import _memoizeWith from "ramda/es/memoizeWith"; import _replace from "ramda/es/replace"; import _split from "ramda/es/split"; import _test from "ramda/es/test"; import _toLower from "ramda/es/toLower"; import _toUpper from "ramda/es/toUpper"; import _type from "ramda/es/type"; import _whereEq from "ramda/es/whereEq"; #auto_require: _esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
@@ -40,7 +40,7 @@ cheapWeek = (date_) ->
 	return -1 + Math.ceil (pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7
 
 weekStartEnd = (yearWeek) ->
-	[___, year, week] = match(/(\d{4})[-w](\d+)/, yearWeek)
+	[___, year, week] = _match(/(\d{4})[-w](\d+)/, yearWeek)
 	firstDayOfYear = dayjs "#{year}-01-01"
 	dayInWeek = firstDayOfYear.add week, 'weeks'
 	mondayOfWeek = dayInWeek.startOf 'week'
@@ -57,8 +57,8 @@ export df =
 		dow = dayjs(date).day()
 		if dow == 0 then 6
 		else dow - 1
-	format: curry (format, _date) ->
-		if type(_date) == 'Number' && _date < 9000000000 then date = 1000 * _date # epoch seconds to milliseconds
+	format: _curry (format, _date) ->
+		if _type(_date) == 'Number' && _date < 9000000000 then date = 1000 * _date # epoch seconds to milliseconds
 		else date = _date
 
 		if format == 'W' then dayjs(date).week() # shorthand for simple format W and Q
@@ -77,8 +77,8 @@ export df =
 	dayjs: (date) -> dayjs(date) # supplied for performance critical parts
 	cheapWeek: (date) -> cheapWeek date
 	weekStartEnd: (yearWeek) -> weekStartEnd yearWeek
-	diff: curry (early, late, unit) -> dayjs(late).diff(early, unit)
-	get: curry (unit, date) -> dayjs(date).get(unit)
+	diff: _curry (early, late, unit) -> dayjs(late).diff(early, unit)
+	get: _curry (unit, date) -> dayjs(date).get(unit)
 	isAfter: (date1, date2, unit = undefined) -> dayjs(date1).isAfter(date2, unit)
 	isAfterOrSame: (date1, date2, unit = undefined) ->
 		dayjs(date1).isAfter(date2, unit) || dayjs(date1).isSame(date2, unit)
@@ -99,7 +99,7 @@ export df =
 			newDate = new Date(date)
 			newDate.setDate newDate.getDate() + days
 			return newDate.toLocaleDateString('sv-SE')
-		startOfWeek: memoizeWith String, (date) -> # memoized so if testing for perf, second run will be faster
+		startOfWeek: _memoizeWith String, (date) -> # memoized so if testing for perf, second run will be faster
 			newDate = new Date(date)
 			day = newDate.getDay()
 			daysToRemove = if day == 0 then 6 else day - 1 # sunday: 0, saturday: 6
@@ -110,24 +110,24 @@ export df =
 
 
 	# Tid mostly handles dates and we save quite a bit of complexity by defaulting to not care about time
-	add: curry (num, unit, date) -> dayjs(date).add(num, unit).format(_YYYYMMDD)
-	subtract: curry (num, unit, date) -> dayjs(date).subtract(num, unit).format(_YYYYMMDD)
-	startOf: curry (unit, date) -> dayjs(date).startOf(unit).format(_YYYYMMDD)
-	endOf: curry (unit, date) -> dayjs(date).endOf(unit).format(_YYYYMMDD)
-	middleOf: curry (earlier, later) ->
+	add: _curry (num, unit, date) -> dayjs(date).add(num, unit).format(_YYYYMMDD)
+	subtract: _curry (num, unit, date) -> dayjs(date).subtract(num, unit).format(_YYYYMMDD)
+	startOf: _curry (unit, date) -> dayjs(date).startOf(unit).format(_YYYYMMDD)
+	endOf: _curry (unit, date) -> dayjs(date).endOf(unit).format(_YYYYMMDD)
+	middleOf: _curry (earlier, later) ->
 		earlierTime = (new Date earlier).getTime()
 		laterTime = (new Date later).getTime()
 		return dayjs(new Date (earlierTime + laterTime) / 2).format(_YYYYMMDD)
 
 	t: # use df.t if you need to handle time and not only date
-		add: curry (num, unit, date) -> dayjs(date).add(num, unit).format()
-		subtract: curry (num, unit, date) -> dayjs(date).subtract(num, unit).format()
-		startOf: curry (unit, date) -> dayjs(date).startOf(unit).format()
-		endOf: curry (unit, date) -> dayjs(date).endOf(unit).format()
+		add: _curry (num, unit, date) -> dayjs(date).add(num, unit).format()
+		subtract: _curry (num, unit, date) -> dayjs(date).subtract(num, unit).format()
+		startOf: _curry (unit, date) -> dayjs(date).startOf(unit).format()
+		endOf: _curry (unit, date) -> dayjs(date).endOf(unit).format()
 
 # eg. "Ornö brygga" -> "orno-brygga"
 export toUrlFriendly = (s) ->
-	$ s, replace(/[A-Z]/, (x) -> toLower x), replace(/\s/, '-'), replace(/ö/, 'o'), replace(/[åä]/, 'a')
+	$ s, _replace(/[A-Z]/, (x) -> _toLower x), _replace(/\s/, '-'), _replace(/ö/, 'o'), _replace(/[åä]/, 'a')
 
 # Many libraries behave different based on NODE_ENV in optimization, logging etc.
 # To keep environments as simialar as possible to prod we keep NODE_ENV set to production and use ENV instead.
@@ -143,24 +143,22 @@ export fromCountryCode = (countryCode_) ->
 	countryCode = countryCode_ || 'US' # fallback since we almost always want fallback
 	three = clm.getAlpha3ByAlpha2 countryCode # CA -> CAN
 	locale_ = clm.getLocaleByAlpha2(countryCode)
-	locale = if locale_ then replace(/_/g, '-', locale_)# CA -> en-CA
+	locale = if locale_ then _replace(/_/g, '-', locale_)# CA -> en-CA
 	name = clm.getCountryNameByAlpha2 countryCode # CA -> Canada
 	currency = clm.getCurrencyByAlpha2 countryCode # CA -> CAD 
 	return {three, locale, name, currency}
 
- 
-
 
 export fromCurrency = (currency) ->
 	countries = clm.getAllCountries()
-	country = $ countries, find whereEq({currency})
+	country = $ countries, _find _whereEq({currency})
 	return fromCountryCode country?.alpha2
 
 
 # 150099, 'SE' -> '1 500,99 kr'
 # Note: amount is assumed in cents
 # Opti: note that this is quite expensive
-export formatCurrency = (amount, countryCode, removeZero = false, round = false, noSymbol = false) ->
+export DEPRECATEDformatCurrency = (amount, countryCode, removeZero = false, round = false, noSymbol = false) ->
 	{currency, locale} = fromCountryCode countryCode || 'US'
 	extra =
 		if round || (removeZero && (amount % 100 == 0)) then {minimumFractionDigits: 0, maximumFractionDigits: 0}
@@ -173,7 +171,7 @@ export formatCurrency = (amount, countryCode, removeZero = false, round = false,
 
 # 150099, 'SE' -> '1 500,99 kr'
 # Note: amount is assumed in cents
-export formatNumber2 = (amount, countryCode, removeZero = false, round = false) ->
+export DEPRECATEDformatNumber2 = (amount, countryCode, removeZero = false, round = false) ->
 	{currency, locale} = fromCountryCode countryCode || 'US'
 	extra =
 		if round || (removeZero && (amount % 100 == 0)) then {minimumFractionDigits: 0, maximumFractionDigits: 0}
@@ -193,10 +191,10 @@ export formatNumber2 = (amount, countryCode, removeZero = false, round = false) 
 #
 # 'US'returns {thousandSeparator: ',', decimalPoint: '.', currencySymbol: '$', currencyBefore: true}
 # 'SE'returns {thousandSeparator: ' ', decimalPoint: ',', currencySymbol: ' kr', currencyBefore: false}
-export defaultFormattingFor = memoizeWith String, (countryCode_ = 'US') ->
+export defaultFormattingFor = _memoizeWith String, (countryCode_ = 'US') ->
 	# https://github.com/srcagency/country-currencies SE -> SEK
-	countryCode = toUpper countryCode_
-	locale = replace '_', '-', clm.getLocaleByAlpha2(countryCode) # CA -> en-CA
+	countryCode = _toUpper countryCode_
+	locale = _replace '_', '-', clm.getLocaleByAlpha2(countryCode) # CA -> en-CA
 	currency = clm.getCurrencyByAlpha2 countryCode # CA -> CAD 
 
 	nbs = ' ' # non-breaking space
@@ -216,13 +214,13 @@ export defaultFormattingFor = memoizeWith String, (countryCode_ = 'US') ->
 	try
 		opts = {style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0}
 		curStr = new Intl.NumberFormat(locale, opts).format(1)
-		if test(/^1 /, curStr) then currencyBefore = false; currencySpace = true
-		else if test(/^1/, curStr) then currencyBefore = false; currencySpace = false
-		else if test(/1 $/, curStr) then currencyBefore = true; currencySpace = true
-		else if test(/1$/, curStr) then currencyBefore = true; currencySpace = false
+		if _test(/^1 /, curStr) then currencyBefore = false; currencySpace = true
+		else if _test(/^1/, curStr) then currencyBefore = false; currencySpace = false
+		else if _test(/1 $/, curStr) then currencyBefore = true; currencySpace = true
+		else if _test(/1$/, curStr) then currencyBefore = true; currencySpace = false
 		else currencySymbol = currency; currencyBefore = false; currencySpace = true;
 
-		currencySymbol = $ curStr, replace('1', ''), replace(nbs, '')
+		currencySymbol = $ curStr, _replace('1', ''), _replace(nbs, '')
 
 	catch err # fallback to the letter currency and before
 		currencySymbol = currency
@@ -292,8 +290,8 @@ export getNewRank = (rankBefore, rankAfter) ->
 # returns new rank based on activeId (dragged item), overId (item dragged over) and the sorted list
 # 1, 4, [{id: 4, rank: '0|h1'}, {id: 1, rank: '0|h3'}, ...]
 export getNewRankFromList = (activeId, overId, list) ->
-	activeIndex = findIndex whereEq({id: activeId}), list
-	overIndex = findIndex whereEq({id: overId}), list
+	activeIndex = _findIndex _whereEq({id: activeId}), list
+	overIndex = _findIndex _whereEq({id: overId}), list
 	getRank = (index) -> list[index].rank
 
 	if overIndex == 0 then afterRank = getRank overIndex
@@ -319,12 +317,6 @@ export formatBigNumber = (n) ->
 	if n > 1000 then return Math.round(n / 1000) + ' k'
 	else return Math.round n
 
-# 8512 -> 8500
-# 851.123 -> 850
-export roundTwoDigits = (n) ->
-	len = length Math.round(n) + ''
-	divider = Math.pow 10, len - 2
-	return Math.round(n / divider) * divider
 
 export sleep = (ms) -> new Promise (resolve) -> setTimeout(resolve, ms)
 
@@ -369,7 +361,7 @@ export formatPeriod = (start, end, {now = Date.now(), long = false} = {}) ->
 
 # TIME e.g. 0:10, 2:50 ----------------------------------------------------------------------------
 export toHMM = (n) ->
-	if isNil n then return null
+	if _isNil n then return null
 	h = toH n
 	mm = toMM n
 	return "#{h}"+':'+"#{mm}"
@@ -384,21 +376,21 @@ export toMM = (n) ->
 _nullIfNaN = (x) -> if isNaN x then null else x
 
 export fromHHMMorDec = (s) ->
-	if test(/:/, s)
-		[h, mm] = split ':', s
+	if _test(/:/, s)
+		[h, mm] = _split ':', s
 		if isNilOrEmpty mm then return _nullIfNaN parseInt(h)
 		else if isNilOrEmpty h then return _nullIfNaN parseFloat(mm) / 60
 		return parseInt(h) + parseFloat(mm) / 60
-	else if test(/,/, s) then return _nullIfNaN parseFloat replace ',', '.', s
+	else if _test(/,/, s) then return _nullIfNaN parseFloat _replace ',', '.', s
 	else return _nullIfNaN parseFloat s
 
 # Returns a new array where element on idx1 is swaped with element on idx2.
 # Note: the elements in the new array are not clones so if you mutate one it will mutate in the original
 # array too (the object pointed to by the original array and new array are the same).
-export swap = curry (idx1, idx2, xs) ->
+export swap = _curry (idx1, idx2, xs) ->
 	# arr = []
 	# for x in xs then arr.push x
-	arr = clone xs
+	arr = _clone xs
 	temp = arr[idx1]
 	arr[idx1] = arr[idx2]
 	arr[idx2] = temp

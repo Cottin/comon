@@ -2,6 +2,7 @@
 import {cc, $} from "ramda-extras" #auto_require: esramda-extras
 
 
+
 # # Uncomment to generate - but comment away not to include clm since it's heavy
 # import clm from "country-locale-map"
 # import {fromCountryCode, defaultFormattingFor} from './sharedUtils'
@@ -36,7 +37,12 @@ import {cc, $} from "ramda-extras" #auto_require: esramda-extras
 # console.log totalStr
 
 
-# This is ~4kb Gzipped so don't include in bundle, fetch via API-call or use lazy loading with dynamic imports
+
+
+
+
+# List of all countries for dropdowns or similar.
+# You probably want to lazy load this or the component that uses it so it doesn't add to bundle size
 export default [
 	{name: "United States", alpha2: 'us', currency: 'USD', currencySymbol: "$", alias: ["usa"]}
 	{name: "United Kingdom", alpha2: 'gb', currency: 'GBP', currencySymbol: "£", alias: ["uk","england","britan"]}
