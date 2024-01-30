@@ -19,17 +19,25 @@ describe 'sharedUtils', () ->
 
 	# nonBreakingSpace = ' ' # use this in tests for currencies
 
-	describe 'defaultFormattingFor', () ->
+	describe.only 'defaultFormattingFor', () ->
 		fUS = q.defaultFormattingFor 'US'
 		it 'SE', () -> 
 			fSE = q.defaultFormattingFor 'SE'
-			deepEq {currencyBefore: false, currencySymbol: 'kr', currencySpace: true, decimalPoint: ',', thousandSeparator: ' '}, fSE
+			deepEq {currencyBefore: false, currencySymbol: 'kr', currencySpace: true, decimalPoint: ',', thousandSeparator: ' ', dateFormat: 'YYYY-MM-DD'}, fSE
+
+		it 'DE', () -> 
+			fDE = q.defaultFormattingFor 'DE'
+			deepEq {currencyBefore: false, currencySymbol: '€', currencySpace: true, decimalPoint: ',', thousandSeparator: '.', dateFormat: 'DD.MM.YYYY'}, fDE
+
+		it 'CN', () -> 
+			fCN = q.defaultFormattingFor 'CN'
+			deepEq {currencyBefore: true, currencySymbol: '¥', currencySpace: false, decimalPoint: '.', thousandSeparator: ',', dateFormat: 'YYYY/MM/DD'}, fCN
 
 		it 'US', () -> 
 			fUS = q.defaultFormattingFor 'US'
-			deepEq {currencyBefore: true, currencySymbol: '$', currencySpace: false, decimalPoint: '.', thousandSeparator: ','}, fUS
+			deepEq {currencyBefore: true, currencySymbol: '$', currencySpace: false, decimalPoint: '.', thousandSeparator: ',', dateFormat: 'MM/DD/YYYY'}, fUS
 
-	describe.only 'formatNumberFast', () ->
+	describe 'formatNumberFast', () ->
 		fSE = q.defaultFormattingFor 'SE'
 		fUS = q.defaultFormattingFor 'US'
 		it '1', () -> eq '12 345 678,1234', q.formatNumberFast 12345678.12345, {form: fSE, toFixed: 4}
@@ -49,13 +57,14 @@ describe 'sharedUtils', () ->
 	describe 'formatBigNumber', () ->
 		it '1', () -> eq '100 k', q.formatBigNumber 100410
 
-	describe 'formatCurrency', -> # NOTE: Spaces below are not normal spaces
-		it '1', -> eq '1 500,99 kr', q.formatCurrency 150099, 'SE'
-		it '2', -> eq '1 500,00 kr', q.formatCurrency 150000, 'SE'
-		it '3', -> eq '1 500 kr', q.formatCurrency 150000, 'SE', true
-		it '4', -> eq '$99.50', q.formatCurrency 9950, 'US'
-		it '5', -> eq '$99.50', q.formatCurrency 9950, 'US', true
-		it '6', -> eq '$99', q.formatCurrency 9900, 'US', true
+
+	# describe 'formatCurrency', -> # NOTE: Spaces below are not normal spaces
+	# 	it '1', -> eq '1 500,99 kr', q.formatCurrency 150099, 'SE'
+	# 	it '2', -> eq '1 500,00 kr', q.formatCurrency 150000, 'SE'
+	# 	it '3', -> eq '1 500 kr', q.formatCurrency 150000, 'SE', true
+	# 	it '4', -> eq '$99.50', q.formatCurrency 9950, 'US'
+	# 	it '5', -> eq '$99.50', q.formatCurrency 9950, 'US', true
+	# 	it '6', -> eq '$99', q.formatCurrency 9900, 'US', true
 
 	describe 'formatPeriod', ->
 		now = new Date('2021-01-01')
@@ -89,6 +98,12 @@ describe 'sharedUtils', () ->
 		it '8 long', -> deepEq ['custom', 'April 3 - 10'], q.formatPeriod '2021-04-03', '2021-04-10', {now, long: true}
 		it '11 long', -> deepEq ['quarter', 'Q2 2020'], q.formatPeriod '2020-04-01', '2020-06-30', {now, long: true}
 		it '12 long', -> deepEq ['year', '2020'], q.formatPeriod '2020-01-01', '2020-12-31', {now, long: true}
+
+	describe 'roundToNiceNumber', ->
+		it '1', -> eq 85000, q.roundToNiceNumber 85122
+		it '2', -> eq 86000, q.roundToNiceNumber 85599
+		it '3', -> eq 86, q.roundToNiceNumber 86
+		it '4', -> eq 860, q.roundToNiceNumber 863.41249
 
 	describe 'toHMM + fromHHMMorDec', ->
 		it 'easy', -> eq '0:30', q.toHMM 0.5

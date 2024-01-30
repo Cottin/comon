@@ -1,12 +1,13 @@
-import _clone from "ramda/es/clone"; import _curry from "ramda/es/curry"; import _find from "ramda/es/find"; import _findIndex from "ramda/es/findIndex"; import _isNil from "ramda/es/isNil"; import _match from "ramda/es/match"; import _memoizeWith from "ramda/es/memoizeWith"; import _replace from "ramda/es/replace"; import _split from "ramda/es/split"; import _test from "ramda/es/test"; import _toLower from "ramda/es/toLower"; import _toUpper from "ramda/es/toUpper"; import _type from "ramda/es/type"; import _whereEq from "ramda/es/whereEq"; #auto_require: _esramda
+import _clone from "ramda/es/clone"; import _curry from "ramda/es/curry"; import _find from "ramda/es/find"; import _findIndex from "ramda/es/findIndex"; import _isNil from "ramda/es/isNil"; import _length from "ramda/es/length"; import _match from "ramda/es/match"; import _memoizeWith from "ramda/es/memoizeWith"; import _replace from "ramda/es/replace"; import _split from "ramda/es/split"; import _test from "ramda/es/test"; import _toLower from "ramda/es/toLower"; import _type from "ramda/es/type"; import _whereEq from "ramda/es/whereEq"; #auto_require: _esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
-import clm from "country-locale-map"
 import exchangeRates from './exchangeRates'
 import {LexoRank} from "lexorank"
 
 import {startOfWeek, parseISO} from 'date-fns'
+
+import {countryByAlpha2} from './countries'
 
 
 import 'dayjs/locale/en-gb'
@@ -137,8 +138,14 @@ export isEnvProdOrTest = () -> process.env.NEXT_PUBLIC_ENV == 'prod' || process.
 export isEnvDev = () -> process.env.NEXT_PUBLIC_ENV == 'dev'
 
 
+
+export DEPRECATEDfromCurrency = (currency) ->
+	countries = clm.getAllCountries()
+	country = $ countries, _find _whereEq({currency})
+	return fromCountryCode country?.alpha2
+
 # Returns typical things for a country code, see example for 'CA' below
-export fromCountryCode = (countryCode_) ->
+export DEPRECATEDfromCountryCode = (countryCode_) ->
 	# https://github.com/srcagency/country-currencies SE -> SEK
 	countryCode = countryCode_ || 'US' # fallback since we almost always want fallback
 	three = clm.getAlpha3ByAlpha2 countryCode # CA -> CAN
@@ -147,13 +154,6 @@ export fromCountryCode = (countryCode_) ->
 	name = clm.getCountryNameByAlpha2 countryCode # CA -> Canada
 	currency = clm.getCurrencyByAlpha2 countryCode # CA -> CAD 
 	return {three, locale, name, currency}
-
-
-export fromCurrency = (currency) ->
-	countries = clm.getAllCountries()
-	country = $ countries, _find _whereEq({currency})
-	return fromCountryCode country?.alpha2
-
 
 # 150099, 'SE' -> '1 500,99 kr'
 # Note: amount is assumed in cents
@@ -189,13 +189,15 @@ export DEPRECATEDformatNumber2 = (amount, countryCode, removeZero = false, round
 # Note: probably only run this code at server and send result to client, don't include this in client bundle
 # because clm is probably unnessesary big given that you most likely only need the formatting for one country.
 #
-# 'US'returns {thousandSeparator: ',', decimalPoint: '.', currencySymbol: '$', currencyBefore: true}
-# 'SE'returns {thousandSeparator: ' ', decimalPoint: ',', currencySymbol: ' kr', currencyBefore: false}
-export defaultFormattingFor = _memoizeWith String, (countryCode_ = 'US') ->
+# 'US' returns {thousandSeparator: ',', decimalPoint: '.', currencySymbol: '$', currencyBefore: true}
+# 'SE' returns {thousandSeparator: ' ', decimalPoint: ',', currencySymbol: ' kr', currencyBefore: false}
+export defaultFormattingFor = _memoizeWith String, (countryCode = 'US') ->
 	# https://github.com/srcagency/country-currencies SE -> SEK
-	countryCode = _toUpper countryCode_
-	locale = _replace '_', '-', clm.getLocaleByAlpha2(countryCode) # CA -> en-CA
-	currency = clm.getCurrencyByAlpha2 countryCode # CA -> CAD 
+	# countryCode = _toUpper countryCode_
+	# locale = countries.
+	# locale = _replace '_', '-', clm.getLocaleByAlpha2(countryCode) # CA -> en-CA
+	# currency = clm.getCurrencyByAlpha2 countryCode # CA -> CAD 
+	{locale, currency} = countryByAlpha2[countryCode]
 
 	nbs = ' ' # non-breaking space
 
@@ -227,10 +229,25 @@ export defaultFormattingFor = _memoizeWith String, (countryCode_ = 'US') ->
 		currencyBefore = false
 		currencySpace = true
 
-	return {thousandSeparator, decimalPoint, currencySymbol, currencyBefore, currencySpace}
+	try
+		opts = {year: 'numeric', month: 'numeric', day: 'numeric'}
+		curStr = new Intl.DateTimeFormat(locale, opts).format(new Date('2001-02-03'))
+		if curStr == '02/03/2001' || curStr == '2/3/2001' then dateFormat = 'MM/DD/YYYY'
+		else if curStr == '03/02/2001' || curStr == '3/2/2001' then dateFormat = 'DD/MM/YYYY'
+		else if curStr == '2001-02-03' || curStr == '2001-2-3' then dateFormat = 'YYYY-MM-DD'
+		else if curStr == '03.02.2001' || curStr == '3.2.2001' then dateFormat = 'DD.MM.YYYY'
+		else if curStr == '2001.02.03' || curStr == '2001.2.3' then dateFormat = 'YYYY.MM.DD'
+		else if curStr == '2001/02/03' || curStr == '2001/2/3' then dateFormat = 'YYYY/MM/DD'
+		else dateFormat = 'YYYY-MM-DD'
+
+	catch err # fallback to ISO standard
+		dateFormat = 'YYYY-MM-DD'
+
+	return {thousandSeparator, decimalPoint, currencySymbol, currencyBefore, currencySpace, dateFormat}
 
 
-export defaultUS = defaultFormattingFor 'US'
+# export defaultUS = defaultFormattingFor 'US'
+export defaultUS = {thousandSeparator: ",", decimalPoint: ".", "currencySymbol": "$", "currencyBefore": true, "currencySpace": false, "dateFormat": "MM/DD/YYYY"}
 
 
 # This is a bit crazy, yes!
@@ -316,6 +333,14 @@ export formatNumber = (n, removeZero = false, decimals = 2) ->
 export formatBigNumber = (n) ->
 	if n > 1000 then return Math.round(n / 1000) + ' k'
 	else return Math.round n
+
+# returns a "nice looking" number given a number
+# 8512 -> 8500
+# 851.123 -> 850
+export roundToNiceNumber = (n) ->
+	len = _length Math.round(n) + ''
+	divider = Math.pow 10, len - 2
+	return Math.round(n / divider) * divider
 
 
 export sleep = (ms) -> new Promise (resolve) -> setTimeout(resolve, ms)
