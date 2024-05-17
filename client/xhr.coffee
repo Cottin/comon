@@ -13,18 +13,20 @@ replacer = (key, value) ->
 	return if value == undefined then '__UNDEFINED_$%&_' else value
 
 export default xhr = ({popsiqlUrl, restUrl, on401, please500 = defaults['500'], pleaseCheck = defaults.check}) ->
-	rest = ({path, method, body, responseType = null, fileName = null, rawBody = false}) ->
+	rest = ({path, method, body, responseType = null, fileName = null, rawBody = false, signal = null}) ->
 			token = undefined # utils.getCookie('CSRF-TOKEN')
 			params = 
 				credentials: 'same-origin'
 				# credentials: 'include'
 				method: method
+				signal: signal
 
 			if rawBody then params.headers = {'CSRF-Token': token}
 			else params.headers = {'Content-Type': 'application/json', 'CSRF-Token': token}
 
 			if method == 'POST'
 				params.body = if rawBody then body else JSON.stringify body, replacer
+			console.log 'is signal aborted before the fetch:', signal
 			res = await fetch restUrl + path, params
 
 			if res.status == 401
@@ -45,11 +47,11 @@ export default xhr = ({popsiqlUrl, restUrl, on401, please500 = defaults['500'], 
 				else return res.json()
 			else if res.status == 444
 				ourError = await res.json()
-				throw new Error ourError.message
+				throw parseError ourError
 			else if res.status == 500
 				text = await res.text()
-				console.error text 
-				throw new Error please500
+				console.log 'text', text
+				throw new Error text
 			else
 				throw new Error pleaseCheck
 		
@@ -83,8 +85,8 @@ export default xhr = ({popsiqlUrl, restUrl, on401, please500 = defaults['500'], 
 		write: (query) -> pop query, false
 
 	restApi:
-		post: (path, body, {responseType, fileName, rawBody} = {}) ->
-			rest {path, method: 'POST', body, responseType, fileName, rawBody}
+		post: (path, body, {responseType, fileName, rawBody, signal} = {}) ->
+			rest {path, method: 'POST', body, responseType, fileName, rawBody, signal}
 		get: (path, {responseType, fileName} = {}) -> rest {path, method: 'GET', responseType, fileName}
 
 

@@ -30,6 +30,7 @@
     "fela": "^11.6.1",
     "fela-preset-web": "^11.6.1",
     "lexorank": "^1.0.5",
+    "mssql": "^10.0.2",
     "nanoid": "^4.0.0",
     "pg": "^8.7.3",
     "pg-native": "^3.0.0",

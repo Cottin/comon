@@ -52,6 +52,7 @@ MMMs = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'n
 
 # Proxy for date related utils
 export df =
+	setLocale: (locale) -> dayjs.locale(locale)
 	dayjs: dayjs
 	# Mo = 0, Su = 6
 	dayOfWeek: (date) ->
@@ -77,6 +78,7 @@ export df =
 	sow: (date) -> startOfWeek parseISO date
 	dayjs: (date) -> dayjs(date) # supplied for performance critical parts
 	cheapWeek: (date) -> cheapWeek date
+	weekNum: (date) -> dayjs(date).week()
 	weekStartEnd: (yearWeek) -> weekStartEnd yearWeek
 	diff: _curry (early, late, unit) -> dayjs(late).diff(early, unit)
 	get: _curry (unit, date) -> dayjs(date).get(unit)
@@ -421,6 +423,14 @@ export swap = _curry (idx1, idx2, xs) ->
 	arr[idx2] = temp
 	return arr
 
+# We sometimes optimistically create some data client side with a temporary id that then later is saved in db
+# and is given a permanent id. When the swap of the temporary id to the permanent id happens in the client
+# side cache it can cause rendering issues if the id is used as a react key for a component since the
+# component is then removed and another component is rendered in it's place and all state is lost.
+# The simple solution is that we keep the tempId on the object in the cache and use that if present for
+# components that otherwise would loose it's state in such a cache swap.
+export safeId = ({id, tempId}) -> if !_isNil tempId then tempId else id
+
 export trycatch = (promise) ->
 	try
 		res = await promise
@@ -466,9 +476,12 @@ export calcNicePeriod = (min, max) ->
 	return 'total'
 
 
-
-
-
+# Simple normalization function to use with results from the database
+export norm = (list) ->
+	ret = {}
+	for o in list
+		ret[o.id] = o
+	return ret
 
 
 

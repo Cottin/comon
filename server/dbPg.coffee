@@ -1,11 +1,11 @@
  #auto_require: _esramda
 import {} from "ramda-extras" #auto_require: esramda-extras
 
-import {prepareDangerous, shortResult, prepareWithParams} from './dbHelpers'
+import {shortResult, prepareWithParams} from './dbHelpers'
 
 
 
-# Gives you a postgres api for node-postgres
+# Gives you a DB api for node-postgres
 # eg. {sql, query, transaction} = createDB ...
 # 		sql"select * from customer where id = #{1}'
 # 		query 'select * from customer where id = $1', [1]
@@ -26,24 +26,26 @@ export createDB = (config) ->
 	transaction = (fn) ->
 		# https://github.com/brianc/node-postgres/issues/433
 		client = await pool.connect()
-		queryTr = queryFn client, config
+		queryTrans = queryFn client, config
 
-		sqlTr = (strings, ...values) ->
+		sqlTrans = (strings, ...values) ->
 			[sqlQuery, params] = prepareWithParams strings, ...values
-			return queryTr sqlQuery, params
+			return queryTrans sqlQuery, params
 
 		try
-			await sqlTr'BEGIN'
-			result = await fn {sql: sqlTr, query: queryTr}
-			await sqlTr'COMMIT'
+			await sqlTrans'BEGIN'
+			result = await fn {sql: sqlTrans, query: queryTrans}
+			await sqlTrans'COMMIT'
 			return result
 		catch err
-			await sqlTr'ROLLBACK'
+			await sqlTrans'ROLLBACK'
 			throw err
 		finally
 			client.release()
 
-	return {sql, query, transaction}
+	releaseIfNeeded = () -> console.log 'release not needed with pg'
+
+	return {sql, query, transaction, releaseIfNeeded}
 
 
 queryFn = (poolOrClient, config) -> (sqlQuery, params) ->

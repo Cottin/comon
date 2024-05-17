@@ -33,6 +33,16 @@ throws.log = (re, f) ->
 	console.log f()
 	assert.throws f, re
 
+export regEq = (re, a, b) ->
+	assert.ok(re.test(a), b)
+regEq.log = (re, a, b) ->
+	console.log a
+	assert.ok(re.test(a), b)
+
+
+itCount = 0
+export its = (f) -> it itCount++, f
+its.only = (f) -> it.only itCount++, f
 
 # Use to wrap await calls in test files so errors are not hidden
 # eg. res = await defuse pgPopsiql.sql query1

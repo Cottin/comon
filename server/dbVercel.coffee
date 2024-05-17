@@ -21,7 +21,14 @@ export createDB = (config) ->
 		return query sqlQuery, params
 
 	query = (sqlQuery, params) ->
-		if !client then console.log 'db.connect!!!!!!!!'; client = await db.connect()
+		if !client
+			console.log 'no client, db.connect()'
+			t00 = performance.now()
+			try
+				client = await db.connect()
+			catch err
+				console.log 'error when db.connect()', err
+			console.log "client connected in #{Math.round(performance.now() - t00)} ms" 
 		t0 = performance.now()
 		try
 			res = await client.query sqlQuery, params
@@ -42,7 +49,14 @@ export createDB = (config) ->
 			await sql"ROLLBACK"
 			throw err
 
+	# Vercels main docs don't mention this by feb 2024 but the in the repo it does 
+	# https://github.com/vercel/storage/tree/main/packages/postgres#querying
+	# and if you don't relsease the app crashes after ~10 queries cus it can't connect to db any more.
+	releaseIfNeeded = () ->
+		if client
+			console.log 'releasing client' 
+			client.release()
 
-	return {sql, query, transaction}
+	return {sql, query, transaction, releaseIfNeeded}
 
 
