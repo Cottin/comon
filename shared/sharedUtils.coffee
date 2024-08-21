@@ -11,6 +11,7 @@ import {countryByAlpha2} from './countries'
 
 
 import 'dayjs/locale/en-gb'
+import 'dayjs/locale/sv'
 import dayjs from 'dayjs'
 dayjs.locale('en-gb') # en-gb starts week on monday, en does not
 import quarterOfYear from 'dayjs/plugin/quarterOfYear'
@@ -266,13 +267,14 @@ export defaultUS = {thousandSeparator: ",", decimalPoint: ".", "currencySymbol":
 # formatNumberFast 1234.00, {form: defaultSE, toFixed: 2, removeZero: true, currency: null} returns '1 234'
 export formatNumberFast = (num, {form = defaultUS, toFixed = 2, removeZero = false, currency = null} = {}) ->
 	s = ''
-	snum = Math.trunc(num) + ''
+	numFixed = num.toFixed(toFixed)
+	snum = Math.trunc(numFixed) + ''
 	for i in [0...snum.length]
 		if (snum.length - i) % 3 == 0 && i > 0 then s += form.thousandSeparator
 		s += snum[i]
 
-	if toFixed > 0 && !(num % 1 == 0 && removeZero)
-		s += form.decimalPoint + (num % 1).toFixed(toFixed).substring(2)
+	if toFixed > 0 && !(numFixed % 1 == 0 && removeZero)
+		s += form.decimalPoint + (numFixed % 1).toFixed(toFixed).substring(2)
 
 	if currency == 'symbol'
 		nbs = ' ' # non-breaking space

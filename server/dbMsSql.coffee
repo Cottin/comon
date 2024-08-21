@@ -1,4 +1,4 @@
-import _type from "ramda/es/type"; #auto_require: _esramda
+import _equals from "ramda/es/equals"; import _type from "ramda/es/type"; import _uniq from "ramda/es/uniq"; import _without from "ramda/es/without"; #auto_require: _esramda
 import {sf0} from "ramda-extras" #auto_require: esramda-extras
 
 # NOTE: After 1 day of trouble shooting - we can't import mssql here when running on node v12 since then a
@@ -59,10 +59,22 @@ queryFn = (poolOrTransaction, config, dryRun = false) -> (strings, ...values) ->
 		else
 			res = await request.query stringsToUse, ...params
 			ret = res.recordset
-			resString = if !ret then "rows affected: #{sf0 res.rowsAffected}" else shortResult ret
+			# Note that each statement results in a 1 in rowsAffected.
+			# Seems tools like VS Code etc. parses the query and compares if with the result to realize what
+			# item of rowsAffected is the most important one. This is too advanced to do here, so instead just
+			# do a simple clean up like below
+			if res.rowsAffected.length == 0 then rowsAffectedClean = []
+			else if _equals [1], _uniq(res.rowsAffected) then rowsAffectedClean = [1]
+			else
+				uniquesWithout1 = _without([1], _uniq(res.rowsAffected))
+				if uniquesWithout1.length == 1 then rowsAffectedClean = uniquesWithout1
+				else rowsAffectedClean = res.rowsAffected
+
+			resString = if !ret then "rows affected: #{sf0 rowsAffectedClean}" else shortResult ret
 
 		config.log '\n' + sqlQuery, params, "- #{Math.round(performance.now() - t0)} ms - #{resString}"
 		return ret
 	catch err
 		config.log '\n', sqlQuery, params, "- #{Math.round(performance.now() - t0)} ms - ERROR"
+		console.error 'err', err
 		throw err

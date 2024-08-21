@@ -26,7 +26,7 @@ export default xhr = ({popsiqlUrl, restUrl, on401, please500 = defaults['500'], 
 
 			if method == 'POST'
 				params.body = if rawBody then body else JSON.stringify body, replacer
-			console.log 'is signal aborted before the fetch:', signal
+			# console.log 'is signal aborted before the fetch:', signal
 			res = await fetch restUrl + path, params
 
 			if res.status == 401
