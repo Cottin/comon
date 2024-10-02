@@ -141,6 +141,7 @@ export isEnvProdOrTest = () -> process.env.NEXT_PUBLIC_ENV == 'prod' || process.
 export isEnvDev = () -> process.env.NEXT_PUBLIC_ENV == 'dev'
 
 
+export capitalize = (s) -> s.charAt(0).toUpperCase() + s.slice(1)
 
 export DEPRECATEDfromCurrency = (currency) ->
 	countries = clm.getAllCountries()
@@ -349,7 +350,7 @@ export roundToNiceNumber = (n) ->
 
 export sleep = (ms) -> new Promise (resolve) -> setTimeout(resolve, ms)
 
-export formatPeriod = (start, end, {now = Date.now(), long = false} = {}) ->
+export formatPeriod = (start, end, {now = Date.now(), long = false, locale = 'en'} = {}) ->
 	if df.isBefore end, start then return [null, 'Invalid period']
 	if !df.isValid start then return [null, 'Invalid start date']
 	if !df.isValid end then return [null, 'Invalid end date']
@@ -366,10 +367,14 @@ export formatPeriod = (start, end, {now = Date.now(), long = false} = {}) ->
 
 	if df.isSame df.startOf('week', start), start, 'day'
 		if df.isSame df.endOf('week', start), end, 'day'
-			startMMM = df.format(fM, start)
-			endMMM = df.format(fM, end)
-			extra = if startMMM == endMMM then '' else endMMM + ' '
-			return ['week', "#{startMMM} #{df.format('D', start)} - #{extra}#{df.format('D', end)}#{yearEnd}"]
+			if locale = 'sv'
+				weekText = if long then 'Vecka ' else 'V'
+				return ['week', "#{weekText}#{df.weekNum start}#{yearEnd}"]
+			else
+				startMMM = df.format(fM, start)
+				endMMM = df.format(fM, end)
+				extra = if startMMM == endMMM then '' else endMMM + ' '
+				return ['week', "#{startMMM} #{df.format('D', start)} - #{extra}#{df.format('D', end)}#{yearEnd}"]
 
 	if df.isSame df.startOf('quarter', start), start, 'day'
 		if df.isSame df.endOf('quarter', start), end, 'day'

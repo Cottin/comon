@@ -19,7 +19,7 @@ describe 'sharedUtils', () ->
 
 	# nonBreakingSpace = ' ' # use this in tests for currencies
 
-	describe.only 'defaultFormattingFor', () ->
+	describe 'defaultFormattingFor', () ->
 		fUS = q.defaultFormattingFor 'US'
 		it 'SE', () -> 
 			fSE = q.defaultFormattingFor 'SE'
@@ -37,7 +37,7 @@ describe 'sharedUtils', () ->
 			fUS = q.defaultFormattingFor 'US'
 			deepEq {currencyBefore: true, currencySymbol: '$', currencySpace: false, decimalPoint: '.', thousandSeparator: ',', dateFormat: 'MM/DD/YYYY'}, fUS
 
-	describe.only 'formatNumberFast', () ->
+	describe 'formatNumberFast', () ->
 		fSE = q.defaultFormattingFor 'SE'
 		fUS = q.defaultFormattingFor 'US'
 		it '1', () -> eq '12 345 678,1234', q.formatNumberFast 12345678.12345, {form: fSE, toFixed: 4}
@@ -80,6 +80,8 @@ describe 'sharedUtils', () ->
 		it 'year', -> deepEq ['year', '2021'], q.formatPeriod '2021-01-01', '2021-12-31', {now}
 
 		it '7', -> deepEq ['week', 'Jul 6 - 12 2020'], q.formatPeriod '2020-07-06', '2020-07-12', {now}
+		it 'week', -> deepEq ['week', 'Vecka 17'], q.formatPeriod '2021-04-26', '2021-05-02', {now, long: true, locale: 'sv'}
+		it.only 'week', -> deepEq ['week', 'Vecka 40 2024'], q.formatPeriod '2024-09-30', '2024-10-06', {now, long: true, locale: 'sv'}
 		it 'custom', -> deepEq ['custom', 'May 3 - Jun 10'], q.formatPeriod '2021-05-03', '2021-06-10', {now}
 		it 'custom same', -> deepEq ['custom', 'May 3 - 10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
 		it 'custom same different years', -> deepEq ['custom', 'May 3 2020 - May 10 2021'], q.formatPeriod '2020-05-03', '2021-05-10', {now}
