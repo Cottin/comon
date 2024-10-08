@@ -163,17 +163,26 @@ export navigate = (routerOrRouter, spec, options = {scroll: false, shallow: true
 	newUrl = toUrl newPostQuery
 	routerOrRouter.push newUrl, null, options
 
-export prepareNavigate = (routerOrRouter, spec, post = null) ->
+export prepareNavigate = (routerOrRouter, specOrFn, post = null) ->
 	asPath = routerOrRouter.asPath || routerOrRouter.router?.state?.asPath
 	# NOTE: On server: projects=%5B5%2C101%5D  On client: projects=[5,101] 
 	#				Generates "Warning: Prop `href` did not match" in next js
 	# 			Solution below is to always decode the asPath (decoding projects=[5,101] returns projects=[5,101])
 	decodedAsPath = decodeURIComponent asPath
 	urlQuery = fromUrl decodedAsPath
-	newQuery = change spec, urlQuery
+	if _type(specOrFn) == 'Function'
+		newQuery = removeUndefined specOrFn(urlQuery)
+	else newQuery = change specOrFn, urlQuery
 	newPostQuery = if post then post newQuery else newQuery
 	newUrl = toUrl newPostQuery
 	return newUrl
+
+removeUndefined = (o) ->
+	ret = {}
+	for k, v of o
+		if v == undefined then continue
+		else ret[k] = v
+	return ret
 
 
 ########## SPECIALS ##########################################################################################
