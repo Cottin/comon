@@ -350,10 +350,18 @@ export roundToNiceNumber = (n) ->
 
 export sleep = (ms) -> new Promise (resolve) -> setTimeout(resolve, ms)
 
+# Takes a start and end date and returns:
+# [identified period,    formatted period,     period id]
+# eg. start='2021-05-03', end='2021-05-09' -> ['week', 'May 3 - 9', 'w2021-05-03']
+# Discussion:
+# + Looks nice in the url
+# + More performant than in a loop in a selector having to calculate "#{startOf 'week', date}-#{endOf 'week', date}"
+# - Adds complexity
 export formatPeriod = (start, end, {now = Date.now(), long = false, locale = 'en'} = {}) ->
 	if df.isBefore end, start then return [null, 'Invalid period']
 	if !df.isValid start then return [null, 'Invalid start date']
 	if !df.isValid end then return [null, 'Invalid end date']
+	
 
 	yearEnd = if df.isSame end, now, 'year' then '' else " #{df.format 'YYYY', end}"
 	yearStart = if df.isSame start, now, 'year' then '' else " #{df.format 'YYYY', start}"
@@ -363,35 +371,58 @@ export formatPeriod = (start, end, {now = Date.now(), long = false, locale = 'en
 	if df.isSame df.startOf('month', start), start, 'day'
 		if df.isSame df.endOf('month', start), end, 'day'
 			extra = if df.isSame end, now, 'year' then '' else ' ' + df.format('YYYY', start)
-			return ['month', "#{df.format(fM, start)}#{extra}"]
+			return ['month', "#{df.format(fM, start)}#{extra}", "m#{start}"]
 
 	if df.isSame df.startOf('week', start), start, 'day'
 		if df.isSame df.endOf('week', start), end, 'day'
-			if locale = 'sv'
+			if locale == 'sv'
 				weekText = if long then 'Vecka ' else 'V'
-				return ['week', "#{weekText}#{df.weekNum start}#{yearEnd}"]
+				return ['week', "#{weekText}#{df.weekNum start}#{yearEnd}", "w#{start}"]
 			else
 				startMMM = df.format(fM, start)
 				endMMM = df.format(fM, end)
 				extra = if startMMM == endMMM then '' else endMMM + ' '
-				return ['week', "#{startMMM} #{df.format('D', start)} - #{extra}#{df.format('D', end)}#{yearEnd}"]
+				return ['week', "#{startMMM} #{df.format('D', start)} - #{extra}#{df.format('D', end)}#{yearEnd}", "w#{start}"]
 
 	if df.isSame df.startOf('quarter', start), start, 'day'
 		if df.isSame df.endOf('quarter', start), end, 'day'
-			return ['quarter', "Q#{df.format('Q', start)} #{df.format('YYYY', start)}"]
+			return ['quarter', "Q#{df.format('Q', start)} #{df.format('YYYY', start)}", "q#{start}"]
 
 	if df.isSame df.startOf('year', start), start, 'day'
 		if df.isSame df.endOf('year', end), end, 'day'
-			return ['year', "#{df.format('YYYY', start)}"]
+			return ['year', "#{df.format('YYYY', start)}", "y#{start}"]
+
+	customId = "#{df.format _YYYYMMDD, start}-#{df.format _YYYYMMDD, end}"
 
 	if df.isSame start, end, 'day'
-		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)}#{yearEnd}"]
+		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)}#{yearEnd}", customId]
 
 	if df.isSame start, end, 'month'
-		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)} - #{df.format('D', end)}#{yearEnd}"]
+		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)} - #{df.format('D', end)}#{yearEnd}", customId]
 	else
 		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)}#{yearStart} - 
-		#{df.format(fM, end)} #{df.format('D', end)}#{yearEnd}"]
+		#{df.format(fM, end)} #{df.format('D', end)}#{yearEnd}", customId]
+
+
+# Expands a periodId to start and end dates
+# eg. m2021-01-01 -> ['month', '2021-01-01', '2021-01-31']
+REcustomPeriod = /^\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}$/
+export expandPeriodId = (periodId, options) ->
+	periodShort = periodId[0]
+	periodFull = null
+	if periodShort == 'w' then periodFull = 'week'
+	else if periodShort == 'm' then periodFull = 'month'
+	else if periodShort == 'q' then periodFull = 'quarter'
+	else if periodShort == 'y' then periodFull = 'year'
+	else if _test REcustomPeriod, periodId
+		start = periodId.substring 0, 10
+		end = periodId.substring 11, 21
+		return ['custom', start, end]
+	else throw new Error 'Invalid periodId'
+
+	start = periodId.substring 1
+	end = df.endOf(periodFull, start)
+	return [periodFull, start, end]
 
 # TIME e.g. 0:10, 2:50 ----------------------------------------------------------------------------
 export toHMM = (n) ->

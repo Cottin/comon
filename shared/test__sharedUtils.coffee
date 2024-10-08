@@ -69,40 +69,48 @@ describe 'sharedUtils', () ->
 	# 	it '5', -> eq '$99.50', q.formatCurrency 9950, 'US', true
 	# 	it '6', -> eq '$99', q.formatCurrency 9900, 'US', true
 
-	describe 'formatPeriod', ->
-		now = new Date('2021-01-01')
-		it 'empty options', -> deepEq ['month', 'Jan 2021'], q.formatPeriod '2021-01-01', '2021-01-31'
-		it 'month same', -> deepEq ['month', 'Jan'], q.formatPeriod '2021-01-01', '2021-01-31', {now}
-		it 'month', -> deepEq ['month', 'Jan 2020'], q.formatPeriod '2020-01-01', '2020-01-31', {now}
-		it 'week same', -> deepEq ['week', 'May 3 - 9'], q.formatPeriod '2021-05-03', '2021-05-09', {now}
-		it 'week', -> deepEq ['week', 'Apr 26 - May 2'], q.formatPeriod '2021-04-26', '2021-05-02', {now}
-		it 'quarter', -> deepEq ['quarter', 'Q2 2021'], q.formatPeriod '2021-04-01', '2021-06-30', {now}
-		it 'year', -> deepEq ['year', '2021'], q.formatPeriod '2021-01-01', '2021-12-31', {now}
 
-		it '7', -> deepEq ['week', 'Jul 6 - 12 2020'], q.formatPeriod '2020-07-06', '2020-07-12', {now}
-		it 'week', -> deepEq ['week', 'Vecka 17'], q.formatPeriod '2021-04-26', '2021-05-02', {now, long: true, locale: 'sv'}
-		it.only 'week', -> deepEq ['week', 'Vecka 40 2024'], q.formatPeriod '2024-09-30', '2024-10-06', {now, long: true, locale: 'sv'}
-		it 'custom', -> deepEq ['custom', 'May 3 - Jun 10'], q.formatPeriod '2021-05-03', '2021-06-10', {now}
-		it 'custom same', -> deepEq ['custom', 'May 3 - 10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
-		it 'custom same different years', -> deepEq ['custom', 'May 3 2020 - May 10 2021'], q.formatPeriod '2020-05-03', '2021-05-10', {now}
-		it 'custom same day', -> deepEq ['custom', 'May 3'], q.formatPeriod '2021-05-03', '2021-05-03', {now}
+	describe.only 'formatPeriod', ->
+		now = new Date('2021-01-01')
+		it 'empty options', -> deepEq ['month', 'Jan 2021', 'm2021-01-01'], q.formatPeriod '2021-01-01', '2021-01-31'
+		it 'month same', -> deepEq ['month', 'Jan', 'm2021-01-01'], q.formatPeriod '2021-01-01', '2021-01-31', {now}
+		it 'month', -> deepEq ['month', 'Jan 2020', 'm2020-01-01'], q.formatPeriod '2020-01-01', '2020-01-31', {now}
+		it 'week same', -> deepEq ['week', 'May 3 - 9', 'w2021-05-03'], q.formatPeriod '2021-05-03', '2021-05-09', {now}
+		it 'week', -> deepEq ['week', 'Apr 26 - May 2', 'w2021-04-26'], q.formatPeriod '2021-04-26', '2021-05-02', {now}
+		it 'quarter', -> deepEq ['quarter', 'Q2 2021', 'q2021-04-01'], q.formatPeriod '2021-04-01', '2021-06-30', {now}
+		it 'year', -> deepEq ['year', '2021', 'y2021-01-01'], q.formatPeriod '2021-01-01', '2021-12-31', {now}
+
+		it '7', -> deepEq ['week', 'Jul 6 - 12 2020', 'w2020-07-06'], q.formatPeriod '2020-07-06', '2020-07-12', {now}
+		it 'week', -> deepEq ['week', 'Vecka 17', 'w2021-04-26'], q.formatPeriod '2021-04-26', '2021-05-02', {now, long: true, locale: 'sv'}
+		it 'week', -> deepEq ['week', 'Vecka 40 2024', 'w2024-09-30'], q.formatPeriod '2024-09-30', '2024-10-06', {now, long: true, locale: 'sv'}
+		it 'custom', -> deepEq ['custom', 'May 3 - Jun 10', '2021-05-03-2021-06-10'], q.formatPeriod '2021-05-03', '2021-06-10', {now}
+		it 'custom same', -> deepEq ['custom', 'May 3 - 10', '2021-05-03-2021-05-10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
+		it 'custom same different years', -> deepEq ['custom', 'May 3 2020 - May 10 2021', '2020-05-03-2021-05-10'], q.formatPeriod '2020-05-03', '2021-05-10', {now}
+		it 'custom same day', -> deepEq ['custom', 'May 3', '2021-05-03-2021-05-03'], q.formatPeriod '2021-05-03', '2021-05-03', {now}
 
 		it '0', -> deepEq [null, 'Invalid period'], q.formatPeriod '2021-07-06', '2020-07-12', {now}
 		it '8', -> deepEq [null, 'Invalid start date'], q.formatPeriod '2021-02-32', '2021-07-12', {now}
 		it '9', -> deepEq [null, 'Invalid end date'], q.formatPeriod '2021-01-06', '2021-02-30', {now}
 
-		it '11', -> deepEq ['quarter', 'Q2 2020'], q.formatPeriod '2020-04-01', '2020-06-30', {now}
-		it '12', -> deepEq ['year', '2020'], q.formatPeriod '2020-01-01', '2020-12-31', {now}
+		it '11', -> deepEq ['quarter', 'Q2 2020', 'q2020-04-01'], q.formatPeriod '2020-04-01', '2020-06-30', {now}
+		it '12', -> deepEq ['year', '2020', 'y2020-01-01'], q.formatPeriod '2020-01-01', '2020-12-31', {now}
 
-		it 'month same long', -> deepEq ['month', 'January'], q.formatPeriod '2021-01-01', '2021-01-31', {now, long: true}
-		it 'month long', -> deepEq ['month', 'January 2020'], q.formatPeriod '2020-01-01', '2020-01-31', {now, long: true}
-		it 'week same long', -> deepEq ['week', 'May 3 - 9'], q.formatPeriod '2021-05-03', '2021-05-09', {now, long: true}
-		it 'week long', -> deepEq ['week', 'April 26 - May 2'], q.formatPeriod '2021-04-26', '2021-05-02', {now, long: true}
-		it 'quarter long', -> deepEq ['quarter', 'Q2 2021'], q.formatPeriod '2021-04-01', '2021-06-30', {now, long: true}
-		it '7 long', -> deepEq ['week', 'July 6 - 12 2020'], q.formatPeriod '2020-07-06', '2020-07-12', {now, long: true}
-		it '8 long', -> deepEq ['custom', 'April 3 - 10'], q.formatPeriod '2021-04-03', '2021-04-10', {now, long: true}
-		it '11 long', -> deepEq ['quarter', 'Q2 2020'], q.formatPeriod '2020-04-01', '2020-06-30', {now, long: true}
-		it '12 long', -> deepEq ['year', '2020'], q.formatPeriod '2020-01-01', '2020-12-31', {now, long: true}
+		it 'month same long', -> deepEq ['month', 'January', 'm2021-01-01'], q.formatPeriod '2021-01-01', '2021-01-31', {now, long: true}
+		it 'month long', -> deepEq ['month', 'January 2020', 'm2020-01-01'], q.formatPeriod '2020-01-01', '2020-01-31', {now, long: true}
+		it 'week same long', -> deepEq ['week', 'May 3 - 9', 'w2021-05-03'], q.formatPeriod '2021-05-03', '2021-05-09', {now, long: true}
+		it 'week long', -> deepEq ['week', 'April 26 - May 2', 'w2021-04-26'], q.formatPeriod '2021-04-26', '2021-05-02', {now, long: true}
+		it 'quarter long', -> deepEq ['quarter', 'Q2 2021', 'q2021-04-01'], q.formatPeriod '2021-04-01', '2021-06-30', {now, long: true}
+		it '7 long', -> deepEq ['week', 'July 6 - 12 2020', 'w2020-07-06'], q.formatPeriod '2020-07-06', '2020-07-12', {now, long: true}
+		it '8 long', -> deepEq ['custom', 'April 3 - 10', '2021-04-03-2021-04-10'], q.formatPeriod '2021-04-03', '2021-04-10', {now, long: true}
+		it '11 long', -> deepEq ['quarter', 'Q2 2020', 'q2020-04-01'], q.formatPeriod '2020-04-01', '2020-06-30', {now, long: true}
+		it '12 long', -> deepEq ['year', '2020', 'y2020-01-01'], q.formatPeriod '2020-01-01', '2020-12-31', {now, long: true}
+
+	describe 'expandPeriodId', ->
+		now = new Date('2021-01-01')
+		it 'month', -> deepEq ['month', '2021-01-01', '2021-01-31'], q.expandPeriodId 'm2021-01-01', {now}
+		it 'week', -> deepEq ['week', '2021-04-26', '2021-05-02'], q.expandPeriodId 'w2021-04-26', {now}
+		it 'quarter', -> deepEq ['quarter', '2021-04-01', '2021-06-30'], q.expandPeriodId 'q2021-04-01', {now}
+		it 'year', -> deepEq ['year', '2021-01-01', '2021-12-31'], q.expandPeriodId 'y2021-01-01', {now}
 
 	describe 'roundToNiceNumber', ->
 		it '1', -> eq 85000, q.roundToNiceNumber 85122
