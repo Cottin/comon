@@ -10,6 +10,8 @@ import {startOfWeek, parseISO} from 'date-fns'
 import {countryByAlpha2} from './countries'
 
 
+import * as dateFns from 'date-fns'
+
 import 'dayjs/locale/en-gb'
 import 'dayjs/locale/sv'
 import dayjs from 'dayjs'
@@ -128,6 +130,51 @@ export df =
 		subtract: _curry (num, unit, date) -> dayjs(date).subtract(num, unit).format()
 		startOf: _curry (unit, date) -> dayjs(date).startOf(unit).format()
 		endOf: _curry (unit, date) -> dayjs(date).endOf(unit).format()
+
+
+#####################################################################################
+# Findings:
+# - The yyyymmdd api provided by df is nice but too expensive (10x normal dayjs in this test).
+# - date-fns is about 2x faster than dayjs in this test
+# - dayjs objects are not nice console.log, but date-fns works on Date which are okey to console.log
+# => Conclusion is to try using normal dates in data and port df to date-fns. But better would be to
+#			have some way of choosing dayjs or date-fns on a project wide basis, something hacky will do.
+testOfPerformance1 = () ->
+	date = '2022-01-01'
+	for i in [0...1000]
+		endOfWeek = dayjs(date).endOf('week').format(_YYYYMMDD)
+		date = dayjs(endOfWeek).add(1, 'day').format(_YYYYMMDD)
+	console.log 'last date:', date
+
+testOfPerformance2 = () ->
+	date = dayjs('2022-01-01')
+	for i in [0...1000]
+		endOfWeek = date.endOf('week')
+		date = endOfWeek.add(1, 'day')
+	console.log 'last date:', date.format(_YYYYMMDD), date
+
+testOfPerformance3 = () ->
+	date = new Date 2022, 0, 1
+	for i in [0...1000]
+		endOfWeek = dateFns.endOfWeek date
+		date = dateFns.add(endOfWeek, {days: 1})
+	console.log 'last date:', dateFns.format(date, 'yyyy-MM-dd'), date
+
+
+export testOfPerformance = () ->
+	t0 = performance.now()
+	testOfPerformance1()
+	console.log 'Test 1:', performance.now() - t0
+
+	t0 = performance.now()
+	testOfPerformance2()
+	console.log 'Test 2:', performance.now() - t0
+
+	t0 = performance.now()
+	testOfPerformance3()
+	console.log 'Test 3:', performance.now() - t0
+#####################################################################################
+
 
 # eg. "Ornö brygga" -> "orno-brygga"
 export toUrlFriendly = (s) ->
@@ -396,9 +443,10 @@ export formatPeriod = (start, end, {now = Date.now(), long = false, locale = 'en
 
 	if df.isSame start, end, 'day'
 		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)}#{yearEnd}", customId]
-
-	if df.isSame start, end, 'month'
+	else if df.isSame start, end, 'month'
 		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)} - #{df.format('D', end)}#{yearEnd}", customId]
+	else if df.isSame start, end, 'year'
+		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)} - #{df.format(fM, end)} #{df.format('D', end)}#{yearEnd}", customId]
 	else
 		return ['custom', "#{df.format(fM, start)} #{df.format('D', start)}#{yearStart} - 
 		#{df.format(fM, end)} #{df.format('D', end)}#{yearEnd}", customId]

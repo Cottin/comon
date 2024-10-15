@@ -69,6 +69,8 @@ describe 'sharedUtils', () ->
 	# 	it '5', -> eq '$99.50', q.formatCurrency 9950, 'US', true
 	# 	it '6', -> eq '$99', q.formatCurrency 9900, 'US', true
 
+	describe.skip 'testOfPerformance', ->
+		it 'run it', -> deepEq undefined, q.testOfPerformance()
 
 	describe.only 'formatPeriod', ->
 		now = new Date('2021-01-01')
@@ -84,8 +86,9 @@ describe 'sharedUtils', () ->
 		it 'week', -> deepEq ['week', 'Vecka 17', 'w2021-04-26'], q.formatPeriod '2021-04-26', '2021-05-02', {now, long: true, locale: 'sv'}
 		it 'week', -> deepEq ['week', 'Vecka 40 2024', 'w2024-09-30'], q.formatPeriod '2024-09-30', '2024-10-06', {now, long: true, locale: 'sv'}
 		it 'custom', -> deepEq ['custom', 'May 3 - Jun 10', '2021-05-03-2021-06-10'], q.formatPeriod '2021-05-03', '2021-06-10', {now}
-		it 'custom same', -> deepEq ['custom', 'May 3 - 10', '2021-05-03-2021-05-10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
-		it 'custom same different years', -> deepEq ['custom', 'May 3 2020 - May 10 2021', '2020-05-03-2021-05-10'], q.formatPeriod '2020-05-03', '2021-05-10', {now}
+		it 'custom same month current year', -> deepEq ['custom', 'May 3 - 10', '2021-05-03-2021-05-10'], q.formatPeriod '2021-05-03', '2021-05-10', {now}
+		it 'custom same month different years', -> deepEq ['custom', 'May 3 2020 - May 10 2021', '2020-05-03-2021-05-10'], q.formatPeriod '2020-05-03', '2021-05-10', {now}
+		it 'custom differnt month same year', -> deepEq ['custom', 'May 3 - Jun 10 2020', '2020-05-03-2020-06-10'], q.formatPeriod '2020-05-03', '2020-06-10', {now}
 		it 'custom same day', -> deepEq ['custom', 'May 3', '2021-05-03-2021-05-03'], q.formatPeriod '2021-05-03', '2021-05-03', {now}
 
 		it '0', -> deepEq [null, 'Invalid period'], q.formatPeriod '2021-07-06', '2020-07-12', {now}
