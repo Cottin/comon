@@ -27,6 +27,29 @@ export shortResult = (res) ->
 # Note: also returns stringsToUse if you want to use the Set functionality but need to pass the results into
 # a function that expects to be called as a tagged template.
 export prepareWithParams = (strings, ...values) ->
+	return prepareWithParamsRaw 0, strings, values...
+
+# Same as prepareWithParams but you can add to the previous result
+# e.g. prepareWithParamsRecursive(["select * from user where id = ", ""], 1).add([" and active = ", ""], true)
+#				returns 'select * from user where id = $1 and active = $2', [1, true]
+export prepareWithParamsRecursive = (strings, ...values) ->
+	firstResult = prepareWithParamsRaw 0, strings, values...
+
+	firstResult.add = (strings2, ...values) ->
+		additionalResult = prepareWithParamsRaw firstResult[1].length, strings2, values...
+		firstResult[0] += additionalResult[0]
+		firstResult[1].push additionalResult[1]...
+
+		# we need to merge the last string of previous result with first string of next result
+		firstResult[2][firstResult[2].length - 1] += additionalResult[2][0]
+
+		firstResult[2].push additionalResult[2].slice(1)...
+		return this
+
+	return firstResult
+
+
+prepareWithParamsRaw = (offset, strings, ...values) ->
 	if !isTemplateStringsArray(strings) || !Array.isArray(values)
 		throw new Error "Looks like you tried calling sql as a function. Make sure to use it as tagged template."
 
@@ -71,7 +94,7 @@ export prepareWithParams = (strings, ...values) ->
 
 	ret = ''
 	for val, i in valuesToUse
-		ret += "#{stringsToUse[i]}$#{i+1}"
+		ret += "#{stringsToUse[i]}$#{i+offset+1}"
 
 	ret += stringsToUse[stringsToUse.length - 1]
 

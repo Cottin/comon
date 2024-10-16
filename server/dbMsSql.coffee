@@ -5,7 +5,7 @@ import {sf0} from "ramda-extras" #auto_require: esramda-extras
 #				es6 syntax error occurs about PORT and ??. Very weird but simple solution is to pass mssql in config.
 # import mssql from 'mssql'
 
-import {shortResult, prepareWithParams} from './dbHelpers'
+import {shortResult, prepareWithParams, prepareWithParamsRecursive} from './dbHelpers'
 
 if !performance then performance = {now: () -> Date.now()}
 
@@ -15,13 +15,28 @@ if !performance then performance = {now: () -> Date.now()}
 # 		transaction (tr) ->
 #				tr.sql"insert into customer ..."
 #				tr.sql.dryRun"update customer ..."
+#			or if you want to build query:
+# 		sql.build"select * from customer where id = #{1}".add" and active = #{true}".run()
+#
 # Note that all db[Provider].coffee should expose the same api so they are interchangable
 export createDB = (config) ->
 	pool = await config.getPool()
 	if _type(config.log) != 'Function' then throw new Error 'missing log function in config'
 
-	sql = (strings, ...values) -> queryFn(pool, config) strings, ...values
-	sql.dryRun = (strings, ...values) -> queryFn(pool, config, true) strings, ...values
+	sql = (strings, ...values) ->
+		prepareResult = prepareWithParams strings, values...
+		queryFn pool, config, prepareResult
+	sql.dryRun = (strings, ...values) ->
+		prepareResult = prepareWithParams strings, values...
+		queryFn pool, config, prepareResult, true
+
+	sql.build = (strings, ...values) ->
+		recursive = prepareWithParamsRecursive strings, values...
+		recursive.run = () ->
+			queryFn pool, config, this.slice(0, 3)
+		recursive.dryRun = () ->
+			queryFn pool, config, this.slice(0, 3), true
+		return recursive
 
 
 	transaction = (fn) ->
@@ -47,12 +62,11 @@ export createDB = (config) ->
 
 	return {sql, query, transaction, releaseIfNeeded}
 
-
-queryFn = (poolOrTransaction, config, dryRun = false) -> (strings, ...values) ->
+queryFn = (poolOrTransaction, config, prepareResult, dryRun = false) ->
 	t0 = performance.now()
 	try
 		request = new config.mssql.Request poolOrTransaction
-		[sqlQuery, params, stringsToUse] = prepareWithParams strings, ...values
+		[sqlQuery, params, stringsToUse] = prepareResult
 		if dryRun
 			ret = undefined
 			resString = 'DRY RUN = QUERY NOT EXECUTED'
