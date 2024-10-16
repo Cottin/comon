@@ -1,4 +1,4 @@
-import _clone from "ramda/es/clone"; import _curry from "ramda/es/curry"; import _find from "ramda/es/find"; import _findIndex from "ramda/es/findIndex"; import _isNil from "ramda/es/isNil"; import _length from "ramda/es/length"; import _match from "ramda/es/match"; import _memoizeWith from "ramda/es/memoizeWith"; import _replace from "ramda/es/replace"; import _split from "ramda/es/split"; import _test from "ramda/es/test"; import _toLower from "ramda/es/toLower"; import _type from "ramda/es/type"; import _whereEq from "ramda/es/whereEq"; #auto_require: _esramda
+import _clone from "ramda/es/clone"; import _curry from "ramda/es/curry"; import _filter from "ramda/es/filter"; import _find from "ramda/es/find"; import _findIndex from "ramda/es/findIndex"; import _isNil from "ramda/es/isNil"; import _length from "ramda/es/length"; import _map from "ramda/es/map"; import _match from "ramda/es/match"; import _memoizeWith from "ramda/es/memoizeWith"; import _replace from "ramda/es/replace"; import _sortBy from "ramda/es/sortBy"; import _split from "ramda/es/split"; import _take from "ramda/es/take"; import _test from "ramda/es/test"; import _toLower from "ramda/es/toLower"; import _toPairs from "ramda/es/toPairs"; import _type from "ramda/es/type"; import _whereEq from "ramda/es/whereEq"; #auto_require: _esramda
 import {$, isNilOrEmpty} from "ramda-extras" #auto_require: esramda-extras
 _ = (...xs) -> xs
 
@@ -175,6 +175,56 @@ export testOfPerformance = () ->
 	console.log 'Test 3:', performance.now() - t0
 #####################################################################################
 
+#####################################################################################
+# Testing if native js could replace ramda
+# Findings:
+# - objects and Maps does not have native .filter and similar, arrays don't have sortBy, take, ...
+# Conclusions:
+# - The 2 random tests below is much easier to write in ramda
+# - We could probably create lots of helpers like sortBy, filter, take and append it on object/array.prototpe
+#   but that's lots of extra code to maintain and unclear how optimized it would be.
+# - For now, ramda serves a great purpose for these kinds of code bases
+export testOfRamda = () ->
+
+	###### Some real-world scenarios
+
+	# favoritesByRank
+	Project = {
+		"1": {"id": 1, "name": "a", "isActive": 1},
+		"2": {"id": 2, "name": "b", "isActive": 0},
+		"3": {"id": 3, "name": "c", "isActive": 1},
+		"4": {"id": 4, "name": "d", "isActive": 0},
+		"5": {"id": 5, "name": "e", "isActive": 1}
+	}
+
+	res = $ Project,
+					_filter ({isActive}) -> !!isActive
+					_map () -> {weight: 0, count: 0, last: null, lastWeight: null}
+	console.log 'res', res
+
+	res = Object.fromEntries(Object.entries(Project)
+		.filter(([k, {isActive}]) -> !!isActive)
+		.map(([k, v]) -> [k, {weight: 0, count: 0, last: null, lastWeight: null}]))
+	console.log 'res', res
+
+
+
+	# recordsToUse
+	recordsByWeekLast100 = {
+		"2024-10-14": [{"date": "2024-10-14", "hours": 8, "text": "Semester", }, {"date": "2024-10-15", "hours": 8, "text": "Semester", }, {"date": "2024-10-16", "hours": 8, "text": "Semester"}],
+		"2024-10-07": [{"date": "2024-10-07", "hours": 3, "text": "Stöd till verksamheten", }, {"date": "2024-10-07", "hours": 2.5, "text": "Felsökning"}],
+		"2024-09-30": [{"date": "2024-09-30", "hours": 1.5, "text": "Installation rotuer"}, {"date": "2024-09-30", "hours": 2.5, "text": "Stöd till verksamheten"}]
+	}
+	res = $ recordsByWeekLast100, _toPairs, _take(2), _sortBy ([week]) -> week
+	console.log 'res', res
+
+	res = Object.entries(recordsByWeekLast100).slice(0, 2)
+					.sort((a, b) -> if a[1].week < b[1].week then -1 else if a[1].week > b[1].week then 1 else 0)
+	console.log 'res', res
+
+	return 2
+
+#####################################################################################
 
 # eg. "Ornö brygga" -> "orno-brygga"
 export toUrlFriendly = (s) ->

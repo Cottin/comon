@@ -72,7 +72,10 @@ describe 'sharedUtils', () ->
 	describe.skip 'testOfPerformance', ->
 		it 'run it', -> deepEq undefined, q.testOfPerformance()
 
-	describe.only 'formatPeriod', ->
+	describe.skip 'testOfRamda', ->
+		it 'run it', -> deepEq undefined, q.testOfRamda()
+
+	describe 'formatPeriod', ->
 		now = new Date('2021-01-01')
 		it 'empty options', -> deepEq ['month', 'Jan 2021', 'm2021-01-01'], q.formatPeriod '2021-01-01', '2021-01-31'
 		it 'month same', -> deepEq ['month', 'Jan', 'm2021-01-01'], q.formatPeriod '2021-01-01', '2021-01-31', {now}
