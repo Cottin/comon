@@ -3,7 +3,9 @@ import {} from "ramda-extras" #auto_require: esramda-extras
 
 import {db} from '@vercel/postgres'
 
-import {prepareDangerous, shortResult, prepareWithParams} from './dbHelpers'
+import {prepareDangerous, shortResult, prepareWithParams, ensurePrepareResult} from './dbHelpers'
+
+# TODO: THIS NEEDS TO BE UPGRADED TO THE RUN CONCEPT
 
 # Gives you a postgres api for vercel/postgres
 # eg. {sql, query, transaction} = createDB ...

@@ -5,50 +5,62 @@ import {sf0} from "ramda-extras" #auto_require: esramda-extras
 #				es6 syntax error occurs about PORT and ??. Very weird but simple solution is to pass mssql in config.
 # import mssql from 'mssql'
 
-import {shortResult, prepareWithParams, prepareWithParamsRecursive} from './dbHelpers'
+import {shortResult, ensurePrepareResult} from './dbHelpers'
 
 if !performance then performance = {now: () -> Date.now()}
 
 # Gives you a DB api for mssql
 # eg. {sql, transaction} = createDB ...
-# 		sql"select * from customer where id = #{1}'
+# 		run sql"select * from customer where id = #{1}'
 # 		transaction (tr) ->
-#				tr.sql"insert into customer ..."
-#				tr.sql.dryRun"update customer ..."
+#				tr.run sql"insert into customer ..."
+#				tr.run sql.dryRun"update customer ..."
 #			or if you want to build query:
-# 		sql.build"select * from customer where id = #{1}".add" and active = #{true}".run()
+# 		run sql"select * from customer where id = #{1}".add" and active = #{true}"
 #
 # Note that all db[Provider].coffee should expose the same api so they are interchangable
 export createDB = (config) ->
 	pool = await config.getPool()
 	if _type(config.log) != 'Function' then throw new Error 'missing log function in config'
 
-	sql = (strings, ...values) ->
-		prepareResult = prepareWithParams strings, values...
-		queryFn pool, config, prepareResult
-	sql.dryRun = (strings, ...values) ->
-		prepareResult = prepareWithParams strings, values...
-		queryFn pool, config, prepareResult, true
+	run = (prepareResult) -> queryFn pool, config, prepareResult
+	run.dry = (prepareResult) -> queryFn pool, config, prepareResult, true
 
-	sql.build = (strings, ...values) ->
-		recursive = prepareWithParamsRecursive strings, values...
-		recursive.run = () ->
-			queryFn pool, config, this.slice(0, 3)
-		recursive.dryRun = () ->
-			queryFn pool, config, this.slice(0, 3), true
-		return recursive
+	# Temporarily removed - Remove completely december 2024
+	# sql = (strings, ...values) ->
+	# 	prepareResult = prepareWithParams strings, values...
+	# 	return queryFn pool, config, prepareResult
+	# sql.dryRun = (strings, ...values) ->
+	# 	prepareResult = prepareWithParams strings, values...
+	# 	return queryFn pool, config, prepareResult, true
+
+	# sql.build = (strings, ...values) ->
+	# 	recursive = prepareWithParamsRecursive strings, values...
+	# 	recursive.run = () ->
+	# 		queryFn pool, config, this.slice(0, 3)
+	# 	recursive.dryRun = () ->
+	# 		queryFn pool, config, this.slice(0, 3), true
+	# 	return recursive
 
 
 	transaction = (fn) ->
 		trans = new config.mssql.Transaction pool
 
-		sqlTrans = (strings, ...values) -> queryFn(trans, config) strings, ...values
-		sqlTrans.dryRun = (strings, ...values) -> queryFn(trans, config, true) strings, ...values
+		# Temporarily removed - Remove completely december 2024
+		# sqlTrans = (strings, ...values) ->
+		# 	prepareResult = prepareWithParams strings, values...
+		# 	return queryFn trans, config, prepareResult
+		# sqlTrans.dryRun = (strings, ...values) ->
+		# 	prepareResult = prepareWithParams strings, values...
+		# 	return queryFn trans, config, prepareResult, true
+
+		runTrans = (prepareResult) -> queryFn trans, config, prepareResult
+		runTrans.dry = (prepareResult) -> queryFn trans, config, prepareResult, true
 
 		try
 			await trans.begin()
 			config.log 'BEGIN'
-			result = await fn {sql: sqlTrans}
+			result = await fn {sql: sqlTrans, run: runTrans}
 			await trans.commit()
 			config.log 'COMMIT'
 			return result
@@ -60,10 +72,11 @@ export createDB = (config) ->
 	query = () -> throw new Error 'query not supported in mssql, use sql function'
 	releaseIfNeeded = () -> console.log 'release not needed with mssql'
 
-	return {sql, query, transaction, releaseIfNeeded}
+	return {query, run, transaction, releaseIfNeeded}
 
 queryFn = (poolOrTransaction, config, prepareResult, dryRun = false) ->
 	t0 = performance.now()
+	ensurePrepareResult prepareResult
 	try
 		request = new config.mssql.Request poolOrTransaction
 		[sqlQuery, params, stringsToUse] = prepareResult

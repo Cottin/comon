@@ -1,4 +1,4 @@
-import _addIndex from "ramda/es/addIndex"; import _clone from "ramda/es/clone"; import _hasIn from "ramda/es/hasIn"; import _includes from "ramda/es/includes"; import _isNil from "ramda/es/isNil"; import _keys from "ramda/es/keys"; import _map from "ramda/es/map"; import _mapObjIndexed from "ramda/es/mapObjIndexed"; import _split from "ramda/es/split"; import _type from "ramda/es/type"; #auto_require: _esramda
+import _addIndex from "ramda/es/addIndex"; import _clone from "ramda/es/clone"; import _hasIn from "ramda/es/hasIn"; import _includes from "ramda/es/includes"; import _isEmpty from "ramda/es/isEmpty"; import _isNil from "ramda/es/isNil"; import _keys from "ramda/es/keys"; import _map from "ramda/es/map"; import _mapObjIndexed from "ramda/es/mapObjIndexed"; import _replace from "ramda/es/replace"; import _split from "ramda/es/split"; import _toLower from "ramda/es/toLower"; import _toUpper from "ramda/es/toUpper"; import _type from "ramda/es/type"; #auto_require: _esramda
 import {$} from "ramda-extras" #auto_require: esramda-extras
 
 
@@ -36,6 +36,13 @@ export prepareWithParamsRecursive = (strings, ...values) ->
 	firstResult = prepareWithParamsRaw 0, strings, values...
 
 	firstResult.add = (strings2, ...values) ->
+		if _type(strings2) == 'String' && _isEmpty(values)
+			# allow for raw values - but developer responsible for quoting/escaping/sql-injections
+			firstResult[0] += strings2
+			firstResult[2][firstResult[2].length - 1] += strings2
+			return this
+
+
 		additionalResult = prepareWithParamsRaw firstResult[1].length, strings2, values...
 		firstResult[0] += additionalResult[0]
 		firstResult[1].push additionalResult[1]...
@@ -47,6 +54,8 @@ export prepareWithParamsRecursive = (strings, ...values) ->
 		return this
 
 	return firstResult
+
+export sql = prepareWithParamsRecursive # just an alias
 
 
 prepareWithParamsRaw = (offset, strings, ...values) ->
@@ -104,6 +113,12 @@ prepareWithParamsRaw = (offset, strings, ...values) ->
 isTemplateStringsArray = (strings) ->
 	return Array.isArray(strings) && _hasIn('raw', strings) && Array.isArray(strings.raw)
 
+
+export ensurePrepareResult = (prepareResult) ->
+	if _type(prepareResult) != 'Array' || prepareResult.length != 3 || !prepareResult.add || _type(prepareResult.add) != 'Function'
+		throw new Error 'Are you trying to call run with a string?'
+
+	return prepareResult
 
 
 
@@ -178,3 +193,10 @@ export prepareWithParamsOLD = (strings, ...values) ->
 	return [ret, valuesToUse, stringsToUse]
 
 
+# https://www.postgresql.org/docs/8.1/sql-keywords-appendix.html
+# All except "non-reserved" from list
+keywords = ['A', 'ABS', 'ADA', 'ALIAS', 'ALL', 'ALLOCATE', 'ALWAYS', 'ANALYSE', 'ANALYZE', 'AND', 'ANY', 'ARE', 'ARRAY', 'AS', 'ASC', 'ASENSITIVE', 'ASYMMETRIC', 'ATOMIC', 'ATTRIBUTE', 'ATTRIBUTES', 'AUTHORIZATION', 'AVG', 'BERNOULLI', 'BETWEEN', 'BINARY', 'BITVAR', 'BIT_LENGTH', 'BLOB', 'BOTH', 'BREADTH', 'C', 'CALL', 'CARDINALITY', 'CASCADED', 'CASE', 'CAST', 'CATALOG', 'CATALOG_NAME', 'CEIL', 'CEILING', 'CHARACTERS', 'CHARACTER_LENGTH', 'CHARACTER_SET_CATALOG', 'CHARACTER_SET_NAME', 'CHARACTER_SET_SCHEMA', 'CHAR_LENGTH', 'CHECK', 'CHECKED', 'CLASS_ORIGIN', 'CLOB', 'COBOL', 'COLLATE', 'COLLATION', 'COLLATION_CATALOG', 'COLLATION_NAME', 'COLLATION_SCHEMA', 'COLLECT', 'COLUMN', 'COLUMN_NAME', 'COMMAND_FUNCTION', 'COMMAND_FUNCTION_CODE', 'COMPLETION', 'CONDITION', 'CONDITION_NUMBER', 'CONNECT', 'CONNECTION_NAME', 'CONSTRAINT', 'CONSTRAINT_CATALOG', 'CONSTRAINT_NAME', 'CONSTRAINT_SCHEMA', 'CONSTRUCTOR', 'CONTAINS', 'CONTINUE', 'CORR', 'CORRESPONDING', 'COUNT', 'COVAR_POP', 'COVAR_SAMP', 'CREATE', 'CROSS', 'CUBE', 'CUME_DIST', 'CURRENT', 'CURRENT_DATE', 'CURRENT_DEFAULT_TRANSFORM_GROUP', 'CURRENT_PATH', 'CURRENT_ROLE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP', 'CURRENT_TRANSFORM_GROUP_FOR_TYPE', 'CURRENT_USER', 'CURSOR_NAME', 'DATA', 'DATE', 'DATETIME_INTERVAL_CODE', 'DATETIME_INTERVAL_PRECISION', 'DEFAULT', 'DEFERRABLE', 'DEFINED', 'DEGREE', 'DENSE_RANK', 'DEPTH', 'DEREF', 'DERIVED', 'DESC', 'DESCRIBE', 'DESCRIPTOR', 'DESTROY', 'DESTRUCTOR', 'DETERMINISTIC', 'DIAGNOSTICS', 'DICTIONARY', 'DISCONNECT', 'DISPATCH', 'DISTINCT', 'DO', 'DYNAMIC', 'DYNAMIC_FUNCTION', 'DYNAMIC_FUNCTION_CODE', 'ELEMENT', 'ELSE', 'END', 'END-EXEC', 'EQUALS', 'EVERY', 'EXCEPT', 'EXCEPTION', 'EXCLUDE', 'EXEC', 'EXISTING', 'EXP', 'FALSE', 'FILTER', 'FINAL', 'FLOOR', 'FOLLOWING', 'FOR', 'FOREIGN', 'FORTRAN', 'FOUND', 'FREE', 'FREEZE', 'FROM', 'FULL', 'FUSION', 'G', 'GENERAL', 'GENERATED', 'GET', 'GO', 'GOTO', 'GRANT', 'GROUP', 'GROUPING', 'HAVING', 'HIERARCHY', 'HOST', 'IDENTITY', 'IGNORE', 'ILIKE', 'IMPLEMENTATION', 'IN', 'INDICATOR', 'INFIX', 'INITIALIZE', 'INITIALLY', 'INNER', 'INSTANCE', 'INSTANTIABLE', 'INTERSECT', 'INTERSECTION', 'INTO', 'IS', 'ISNULL', 'ITERATE', 'JOIN', 'K', 'KEY_MEMBER', 'KEY_TYPE', 'LATERAL', 'LEADING', 'LEFT', 'LENGTH', 'LESS', 'LIKE', 'LIMIT', 'LN', 'LOCALTIME', 'LOCALTIMESTAMP', 'LOCATOR', 'LOWER', 'M', 'MAP', 'MATCHED', 'MAX', 'MEMBER', 'MERGE', 'MESSAGE_LENGTH', 'MESSAGE_OCTET_LENGTH', 'MESSAGE_TEXT', 'METHOD', 'MIN', 'MOD', 'MODIFIES', 'MODIFY', 'MODULE', 'MORE', 'MULTISET', 'MUMPS', 'NAME', 'NATURAL', 'NCLOB', 'NESTING', 'NEW', 'NORMALIZE', 'NORMALIZED', 'NOT', 'NOTNULL', 'NULL', 'NULLABLE', 'NULLS', 'NUMBER', 'OCTETS', 'OCTET_LENGTH', 'OFF', 'OFFSET', 'OLD', 'ON', 'ONLY', 'OPEN', 'OPERATION', 'OPTIONS', 'OR', 'ORDER', 'ORDERING', 'ORDINALITY', 'OTHERS', 'OUTER', 'OUTPUT', 'OVER', 'OVERLAPS', 'OVERRIDING', 'PAD', 'PARAMETER', 'PARAMETERS', 'PARAMETER_MODE', 'PARAMETER_NAME', 'PARAMETER_ORDINAL_POSITION', 'PARAMETER_SPECIFIC_CATALOG', 'PARAMETER_SPECIFIC_NAME', 'PARAMETER_SPECIFIC_SCHEMA', 'PARTITION', 'PASCAL', 'PATH', 'PERCENTILE_CONT', 'PERCENTILE_DISC', 'PERCENT_RANK', 'PLACING', 'PLI', 'POSTFIX', 'POWER', 'PRECEDING', 'PREFIX', 'PREORDER', 'PRIMARY', 'PUBLIC', 'RANGE', 'RANK', 'READS', 'RECURSIVE', 'REF', 'REFERENCES', 'REFERENCING', 'REGR_AVGX', 'REGR_AVGY', 'REGR_COUNT', 'REGR_INTERCEPT', 'REGR_R2', 'REGR_SLOPE', 'REGR_SXX', 'REGR_SXY', 'REGR_SYY', 'RESULT', 'RETURN', 'RETURNED_CARDINALITY', 'RETURNED_LENGTH', 'RETURNED_OCTET_LENGTH', 'RETURNED_SQLSTATE', 'RIGHT', 'ROLLUP', 'ROUTINE', 'ROUTINE_CATALOG', 'ROUTINE_NAME', 'ROUTINE_SCHEMA', 'ROW_COUNT', 'ROW_NUMBER', 'SCALE', 'SCHEMA_NAME', 'SCOPE', 'SCOPE_CATALOG', 'SCOPE_NAME', 'SCOPE_SCHEMA', 'SEARCH', 'SECTION', 'SELECT', 'SELF', 'SENSITIVE', 'SERVER_NAME', 'SESSION_USER', 'SETS', 'SIMILAR', 'SIZE', 'SOME', 'SOURCE', 'SPACE', 'SPECIFIC', 'SPECIFICTYPE', 'SPECIFIC_NAME', 'SQL', 'SQLCODE', 'SQLERROR', 'SQLEXCEPTION', 'SQLSTATE', 'SQLWARNING', 'SQRT', 'STATE', 'STATIC', 'STDDEV_POP', 'STDDEV_SAMP', 'STRUCTURE', 'STYLE', 'SUBCLASS_ORIGIN', 'SUBLIST', 'SUBMULTISET', 'SUM', 'SYMMETRIC', 'SYSTEM_USER', 'TABLE', 'TABLESAMPLE', 'TABLE_NAME', 'TERMINATE', 'THAN', 'THEN', 'TIES', 'TIMEZONE_HOUR', 'TIMEZONE_MINUTE', 'TO', 'TOP_LEVEL_COUNT', 'TRAILING', 'TRANSACTIONS_COMMITTED', 'TRANSACTIONS_ROLLED_BACK', 'TRANSACTION_ACTIVE', 'TRANSFORM', 'TRANSFORMS', 'TRANSLATE', 'TRANSLATION', 'TRIGGER_CATALOG', 'TRIGGER_NAME', 'TRIGGER_SCHEMA', 'TRUE', 'UESCAPE', 'UNBOUNDED', 'UNDER', 'UNION', 'UNIQUE', 'UNNAMED', 'UNNEST', 'UPPER', 'USAGE', 'USER', 'USER_DEFINED_TYPE_CATALOG', 'USER_DEFINED_TYPE_CODE', 'USER_DEFINED_TYPE_NAME', 'USER_DEFINED_TYPE_SCHEMA', 'USING', 'VALUE', 'VARIABLE', 'VAR_POP', 'VAR_SAMP', 'VERBOSE', 'WHEN', 'WHENEVER', 'WHERE', 'WIDTH_BUCKET', 'WINDOW', 'WITHIN']
+export esc = (s) -> if _includes _toUpper(s), keywords then "\"#{s}\"" else s
+export camelToSnake = (s) -> $ s, _replace(/[A-Z]/g, (s) -> '_' + _toLower s)
+export snakeToCamel = (s) -> $ s, _replace(/_[a-z]/g, (s) -> _toUpper s[1])
+export pascalToSnake = (s) -> $ s, _replace(/^[A-Z]/g, (s) -> _toLower s), camelToSnake

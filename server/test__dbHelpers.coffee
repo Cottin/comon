@@ -7,7 +7,7 @@ import * as dbHelpers from './dbHelpers'
 import {eq, deepEq, throws, its} from '../shared/testUtils'
 
 describe 'dbUtils', () ->
-	describe 'prepareWithParams', () ->
+	describe.only 'prepareWithParams', () ->
 		fn = (...args) -> dbHelpers.prepareWithParams(args...).slice 0, 2
 		fn2 = (...args) -> dbHelpers.prepareWithParams(args...)
 		recPrep = (...args) -> dbHelpers.prepareWithParamsRecursive(args...)
@@ -28,11 +28,17 @@ describe 'dbUtils', () ->
 
 		its -> deepEq ['a$1, b2, c$2', [1, 3], ['a', ', b2, c', '']], fn2"a#{1}, b2, c#{3}"
 
-		its -> deepEq ['a$1, b2, c$2, d$3, e5, f$4', [1, 3, 4, 6], ['a', ', b2, c', ', d', ', e5, f', '']], recPrep"a#{1}, b2, c#{3}".add", d#{4}, e5, f#{6}".slice 0, 3
+		its -> deepEq ['a$1, b2, c$2, d$3, e5, f$4', [1, 3, 4, 6], ['a', ', b2, c', ', d', ', e5, f', '']],
+			recPrep"a#{1}, b2, c#{3}".add", d#{4}, e5, f#{6}".slice 0, 3
 
-		its -> deepEq ['$1, b2, c$2!$3, e5, f$4!', [1, 3, 4, 6], ['', ', b2, c', '!', ', e5, f', '!']], recPrep"#{1}, b2, c#{3}!".add"#{4}, e5, f#{6}!".slice 0, 3
+		its -> deepEq ['$1, b2, c$2!$3, e5, f$4!', [1, 3, 4, 6], ['', ', b2, c', '!', ', e5, f', '!']],
+			recPrep"#{1}, b2, c#{3}!".add"#{4}, e5, f#{6}!".slice 0, 3
 
-		its -> deepEq ['a$1, b2, c$2, d$3, e5, f$4', [1, 3, 4, 6], ['a', ', b2, c', ', d', ', e5, f', '']], recPrep"a#{1}, b2".add", c#{3}".add", d#{4}, e5, f#{6}".slice 0, 3
+		its -> deepEq ['a$1, b2, c$2, d$3, e5, f$4', [1, 3, 4, 6], ['a', ', b2, c', ', d', ', e5, f', '']],
+			recPrep"a#{1}, b2".add", c#{3}".add", d#{4}, e5, f#{6}".slice 0, 3
+
+		its -> deepEq ['a$1, b2, c$2, d$3, e5, f$4', [1, 3, 4, 6], ['a', ', b2, c', ', d', ', e5, f', '']],
+			recPrep"a#{1}, ".add('b2').add", c#{3}".add", d#{4}, e5, f#{6}".slice 0, 3
 
 		its -> deepEq ['update top($1) table set name = $2, age = $3 where id = $4', [1, 'bob', 5, 9]],
 			fn"update top(#{1}) table set
