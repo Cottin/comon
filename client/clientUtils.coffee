@@ -127,13 +127,13 @@ export autoParseUrl = (val) ->
 	else if _test(/^\[.*\]$/, val) # arrays eg. "[1, 2]" --> [1, 2]
 		if val == '[]' then []
 		else $ val[1...val.length-1], _split(','), _map autoParseUrl
-	else val
+	else decodeURIComponent val
 
 kvToQuery = ([k, v]) ->
 	if _type(v) == 'Array'
 		if _isEmpty v then ""
-		else "#{k}=[#{$ v, _join(',')}]"
-	else "#{k}=#{v}"
+		else "#{k}=[#{$ v, _map(encodeURIComponent), _join(',')}]"
+	else "#{k}=#{encodeURIComponent(v)}"
 
 
 # Parses url string to object
@@ -149,7 +149,7 @@ export fromUrl = (url) ->
 # eg. {path0: 'p', path1: 'q', path2: 'r', a: 1, b: 2}' -> /p/q/r?a=1&b=2'
 export toUrl = (query) ->
 	{path0, path1, path2, path3, path4, ...rest} = query
-	paths = $ [path0, path1, path2, path3, path4], _reject(_isNil), _join '/'
+	paths = $ [path0, path1, path2, path3, path4], _reject(_isNil), _map((s) -> encodeURIComponent(s)), _join '/'
 	queryStr = if _isEmpty rest then '' else "?" + $ rest, _toPairs, _map(kvToQuery), _join '&'
 	return "#{if paths == '' then '' else '/' + paths}#{queryStr}"
 
