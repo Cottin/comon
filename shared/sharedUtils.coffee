@@ -621,6 +621,40 @@ export norm = (list) ->
 
 
 
+# Normalizes object in accordance to entity
+# eg. normalizeAs Record, {project: {id: 1, ...}, text: 'Hi', sHours: '2.00 h'}
+#			returns {projectId: 1, text: 'Hi'}
+export normalizeAs = (entity, object) ->
+	if !entity || !object then throw new Error 'entity or object is nil'
+	ret = {}
+	for k, v of object
+		if _type(v) == 'Object'
+			if !_isNil object["#{k}Id"]
+				# do nothing, ie. we already have ....Id field
+			else
+				if _isNil v.id then throw new Error "object.#{k} does not have an id field or it's nil"
+				else
+					if entity["#{k}Id"]
+						ret["#{k}Id"] = v.id
+		else
+			if entity[k]
+				ret[k] = v
+
+	return ret
+
+# Normalizes a full delta using normalizeAs
+export normalizeDelta = (allModels, uncleanDelta) ->
+	ret = {}
+	for entity, entityDeltas of uncleanDelta
+		ret[entity] ?= {}
+		for k, singleDelta of entityDeltas
+			if singleDelta == undefined
+				ret[entity][k] = undefined
+			else
+				ret[entity][k] = normalizeAs allModels[entity], singleDelta
+
+	return ret
+
 
 
 

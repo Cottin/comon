@@ -60,7 +60,7 @@ export createDB = (config) ->
 		try
 			await trans.begin()
 			config.log 'BEGIN'
-			result = await fn {sql: sqlTrans, run: runTrans}
+			result = await fn {run: runTrans}
 			await trans.commit()
 			config.log 'COMMIT'
 			return result

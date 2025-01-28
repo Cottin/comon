@@ -31,8 +31,11 @@ describe 'dbUtils', () ->
 		its -> deepEq ['a$1, b2, c$2, d$3, e5, f$4', [1, 3, 4, 6], ['a', ', b2, c', ', d', ', e5, f', '']],
 			recPrep"a#{1}, b2, c#{3}".add", d#{4}, e5, f#{6}".slice 0, 3
 
-		its -> deepEq ['$1, b2, c$2!$3, e5, f$4!', [1, 3, 4, 6], ['', ', b2, c', '!', ', e5, f', '!']],
-			recPrep"#{1}, b2, c#{3}!".add"#{4}, e5, f#{6}!".slice 0, 3
+		its ->
+			firstHalf = recPrep"#{1}, b2, c#{3}!"
+			firstHalf = firstHalf.add"#{4}, e5, f#{6}!".slice 0, 3
+			deepEq ['$1, b2, c$2!$3, e5, f$4!', [1, 3, 4, 6], ['', ', b2, c', '!', ', e5, f', '!']],
+				firstHalf
 
 		its -> deepEq ['a$1, b2, c$2, d$3, e5, f$4', [1, 3, 4, 6], ['a', ', b2, c', ', d', ', e5, f', '']],
 			recPrep"a#{1}, b2".add", c#{3}".add", d#{4}, e5, f#{6}".slice 0, 3
